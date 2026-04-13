@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+  <meta name="theme-color" content="#0d0d1a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="PriceHunter">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="description" content="Compara precios en AliExpress y Miravia, encuentra cashback y los mejores chollos">
+  <title>PriceHunter</title>
+  <link rel="manifest" href="/manifest.json">
+  <link rel="apple-touch-icon" href="/icons/icon-192.png">
+  <link rel="icon" href="/icons/icon-192.png">
+  <link rel="stylesheet" href="/css/style.css">
+
+  <!-- Prevent address bar on iOS -->
+  <style>
+    @media (display-mode: standalone) {
+      body { padding-top: env(safe-area-inset-top); }
+    }
+  </style>
+</head>
+<body>
+
+<div id="app">
+
+  <!-- HEADER -->
+  <header class="app-header">
+    <div class="header-top">
+      <div class="logo">
+        <div class="logo-icon">🎯</div>
+        <span class="logo-text">PriceHunter</span>
+      </div>
+      <div class="notif-btn" title="Notificaciones" onclick="requestNotifPermission()">
+        🔔
+        <span class="notif-badge" id="notifBadge" style="display:none"></span>
+      </div>
+    </div>
+
+    <div class="search-wrap">
+      <input
+        class="search-input"
+        id="searchInput"
+        type="search"
+        placeholder="Busca un producto, ej: Xiaomi Note 14 Pro+"
+        autocomplete="off"
+        autocorrect="off"
+        spellcheck="false"
+      />
+      <button class="search-btn" id="searchBtn" aria-label="Buscar">🔍</button>
+    </div>
+
+    <nav class="tabs" role="tablist">
+      <button class="tab-btn active" data-tab="search" role="tab">🔎 Comparar</button>
+      <button class="tab-btn" data-tab="cashback" role="tab">💰 Cashback</button>
+      <button class="tab-btn" data-tab="chollos" role="tab"><span class="tab-label">🔥 Chollos</span></button>
+      <button class="tab-btn" data-tab="alerts" role="tab">🔔 Alertas</button>
+    </nav>
+  </header>
+
+  <!-- CONTENT PANELS -->
+  <main class="scroll-area">
+
+    <!-- SEARCH -->
+    <div id="panel-search" class="tab-panel">
+      <div class="empty-state">
+        <div class="empty-icon">🎯</div>
+        <div class="empty-title">Busca y compara precios</div>
+        <div class="empty-sub">
+          Escribe el nombre de un producto para comparar precios en AliExpress, Miravia y más tiendas. También verás el cashback disponible.
+        </div>
+        <div style="margin-top:20px;display:flex;flex-wrap:wrap;gap:8px;justify-content:center">
+          <button onclick="quickSearch('Xiaomi 14T Pro')" style="background:var(--card2);border:1px solid var(--border2);color:var(--text2);padding:6px 12px;border-radius:20px;font-size:12px;cursor:pointer">📱 Xiaomi 14T Pro</button>
+          <button onclick="quickSearch('AirPods Pro')" style="background:var(--card2);border:1px solid var(--border2);color:var(--text2);padding:6px 12px;border-radius:20px;font-size:12px;cursor:pointer">🎧 AirPods Pro</button>
+          <button onclick="quickSearch('Samsung S25')" style="background:var(--card2);border:1px solid var(--border2);color:var(--text2);padding:6px 12px;border-radius:20px;font-size:12px;cursor:pointer">📱 Samsung S25</button>
+          <button onclick="quickSearch('Nintendo Switch')" style="background:var(--card2);border:1px solid var(--border2);color:var(--text2);padding:6px 12px;border-radius:20px;font-size:12px;cursor:pointer">🎮 Nintendo Switch</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- CASHBACK -->
+    <div id="panel-cashback" class="tab-panel hidden">
+      <div class="loading-wrap"><div class="spinner"></div></div>
+    </div>
+
+    <!-- CHOLLOS -->
+    <div id="panel-chollos" class="tab-panel hidden">
+      <div class="loading-wrap"><div class="spinner"></div><span>Cargando chollos...</span></div>
+    </div>
+
+    <!-- ALERTS -->
+    <div id="panel-alerts" class="tab-panel hidden">
+      <div class="loading-wrap"><div class="spinner"></div></div>
+    </div>
+
+  </main>
+
+  <!-- BOTTOM NAV -->
+  <nav class="bottom-nav" role="navigation">
+    <button class="bnav-item active" data-tab="search">
+      <span class="bnav-icon">🔍</span>
+      <span class="bnav-label">Buscar</span>
+    </button>
+    <button class="bnav-item" data-tab="cashback">
+      <span class="bnav-icon">💰</span>
+      <span class="bnav-label">Cashback</span>
+    </button>
+    <button class="bnav-item" data-tab="chollos">
+      <span class="bnav-icon">🔥</span>
+      <span class="bnav-label">Chollos</span>
+    </button>
+    <button class="bnav-item" data-tab="alerts">
+      <span class="bnav-icon">🔔</span>
+      <span class="bnav-label">Alertas</span>
+    </button>
+  </nav>
+
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script src="/js/app.js"></script>
+<script>
+  function quickSearch(q) {
+    document.getElementById('searchInput').value = q;
+    document.getElementById('searchBtn').click();
+  }
+
+  function requestNotifPermission() {
+    if ('Notification' in window && Notification.permission === 'default') {
+      Notification.requestPermission().then(perm => {
+        if (perm === 'granted') {
+          showToast('✅ Notificaciones activadas');
+          document.getElementById('notifBadge').style.display = 'none';
+        }
+      });
+    } else if (Notification.permission === 'granted') {
+      showToast('Las notificaciones ya están activadas');
+    }
+  }
+
+  // Show notif badge if not yet granted
+  if ('Notification' in window && Notification.permission === 'default') {
+    document.getElementById('notifBadge').style.display = 'block';
+  }
+</script>
+</body>
+</html>
