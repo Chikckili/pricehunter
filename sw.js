@@ -1,33 +1,21 @@
-const CACHE_NAME = 'pricehunter-v1';
-const ASSETS = ['/', '/index.html', '/css/style.css', '/js/app.js'];
+var CACHE = 'ph-v1';
+var FILES = ['/', '/index.html'];
 
-self.addEventListener('install', e => {
-  e.waitUntil(caches.open(CACHE_NAME).then(c => c.addAll(ASSETS)));
+self.addEventListener('install', function(e) {
+  e.waitUntil(caches.open(CACHE).then(function(c){ return c.addAll(FILES); }));
   self.skipWaiting();
 });
 
-self.addEventListener('activate', e => {
-  e.waitUntil(caches.keys().then(keys =>
-    Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k)))
-  ));
+self.addEventListener('activate', function(e) {
+  e.waitUntil(caches.keys().then(function(keys){
+    return Promise.all(keys.filter(function(k){ return k!==CACHE; }).map(function(k){ return caches.delete(k); }));
+  }));
   self.clients.claim();
 });
 
-self.addEventListener('fetch', e => {
+self.addEventListener('fetch', function(e) {
   if (e.request.method !== 'GET') return;
-  e.respondWith(
-    fetch(e.request).catch(() => caches.match(e.request))
-  );
-});
-
-self.addEventListener('push', e => {
-  const data = e.data?.json() || { title: 'PriceHunter', body: '¡Nuevo chollo disponible!' };
-  e.waitUntil(
-    self.registration.showNotification(data.title, {
-      body: data.body,
-      icon: '/icons/icon-192.png',
-      badge: '/icons/icon-192.png',
-      vibrate: [200, 100, 200]
-    })
-  );
+  // Don't cache Netlify functions
+  if (e.request.url.includes('/.netlify/')) return;
+  e.respondWith(fetch(e.request).catch(function(){ return caches.match(e.request); }));
 });

@@ -8,144 +8,915 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="PriceHunter">
   <meta name="mobile-web-app-capable" content="yes">
-  <meta name="description" content="Compara precios en AliExpress y Miravia, encuentra cashback y los mejores chollos">
   <title>PriceHunter</title>
-  <link rel="manifest" href="/manifest.json">
-  <link rel="apple-touch-icon" href="/icons/icon-192.png">
-  <link rel="icon" href="/icons/icon-192.png">
-  <link rel="stylesheet" href="/css/style.css">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icon-192.png">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 
-  <!-- Prevent address bar on iOS -->
-  <style>
-    @media (display-mode: standalone) {
-      body { padding-top: env(safe-area-inset-top); }
-    }
-  </style>
+:root {
+  --bg:      #0d0d1a;
+  --bg2:     #13131f;
+  --bg3:     #1a1a2e;
+  --card:    #161625;
+  --card2:   #1e1e35;
+  --accent:  #7c6ff7;
+  --green:   #22c55e;
+  --red:     #ef4444;
+  --amber:   #f59e0b;
+  --text:    #f0f0ff;
+  --text2:   #9090b8;
+  --text3:   #5a5a80;
+  --border:  rgba(255,255,255,0.07);
+  --border2: rgba(255,255,255,0.13);
+  --r:       14px;
+}
+
+html, body {
+  height: 100%;
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 14px;
+  overscroll-behavior: none;
+  -webkit-font-smoothing: antialiased;
+}
+
+#app {
+  max-width: 480px;
+  margin: 0 auto;
+  height: 100dvh;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* ── HEADER ── */
+.header {
+  background: var(--bg3);
+  padding: 12px 16px 0;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.logo { font-size: 18px; font-weight: 700; letter-spacing: -0.3px; }
+.logo span { color: var(--accent); }
+
+.notif-btn {
+  width: 36px; height: 36px;
+  background: var(--card2);
+  border: 1px solid var(--border2);
+  border-radius: 10px;
+  font-size: 16px;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+}
+
+/* ── SEARCH ── */
+.search-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.search-row input {
+  flex: 1;
+  height: 44px;
+  background: var(--card);
+  border: 1px solid var(--border2);
+  border-radius: var(--r);
+  padding: 0 14px;
+  color: var(--text);
+  font-size: 14px;
+  outline: none;
+}
+
+.search-row input:focus { border-color: var(--accent); }
+.search-row input::placeholder { color: var(--text3); }
+
+.search-row button {
+  height: 44px;
+  padding: 0 16px;
+  background: var(--accent);
+  border: none;
+  border-radius: var(--r);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.search-row button:active { opacity: 0.85; }
+
+/* ── TABS ── */
+.tabs {
+  display: flex;
+  border-bottom: 1px solid var(--border);
+}
+
+.tabs button {
+  flex: 1;
+  padding: 9px 4px;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--text3);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: color .15s, border-color .15s;
+}
+
+.tabs button.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+/* ── SCROLL ── */
+.scroll {
+  flex: 1;
+  overflow-y: auto;
+  padding: 14px;
+  scrollbar-width: none;
+}
+.scroll::-webkit-scrollbar { display: none; }
+
+/* ── PANELS ── */
+.panel { display: none; }
+.panel.active { display: block; }
+
+/* ── CARDS ── */
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 12px;
+  margin-bottom: 10px;
+}
+
+.section-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text3);
+  letter-spacing: .8px;
+  text-transform: uppercase;
+  margin: 4px 0 10px;
+}
+
+/* ── PRODUCT CARD ── */
+.prod {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.prod-img {
+  width: 60px; height: 60px;
+  background: var(--bg3);
+  border-radius: 10px;
+  flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 26px;
+  overflow: hidden;
+}
+.prod-img img { width: 100%; height: 100%; object-fit: cover; }
+
+.prod-info { flex: 1; min-width: 0; }
+
+.prod-title {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text);
+  margin-bottom: 5px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.price-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+
+.price-main { font-size: 17px; font-weight: 700; color: var(--green); }
+.price-old  { font-size: 12px; color: var(--text3); text-decoration: line-through; }
+
+.badge {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+.b-red   { background: rgba(239,68,68,.15);  color: var(--red); }
+.b-green { background: rgba(34,197,94,.15);  color: var(--green); }
+.b-blue  { background: rgba(124,111,247,.2); color: var(--accent); }
+
+.store-chips { display: flex; flex-wrap: wrap; gap: 5px; }
+
+.chip {
+  font-size: 10px;
+  padding: 3px 8px;
+  border-radius: 20px;
+  background: var(--card2);
+  color: var(--text2);
+  border: 1px solid var(--border);
+  cursor: pointer;
+}
+.chip.best {
+  background: rgba(34,197,94,.1);
+  color: var(--green);
+  border-color: rgba(34,197,94,.3);
+}
+
+/* ── CASHBACK ── */
+.cb-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+}
+.cb-row:last-child { border-bottom: none; }
+
+.cb-left { display: flex; align-items: center; gap: 10px; }
+.cb-icon { font-size: 22px; width: 36px; text-align: center; }
+.cb-name { font-size: 13px; font-weight: 500; color: var(--text); }
+.cb-store { font-size: 11px; color: var(--text3); }
+
+.cb-pct { font-size: 20px; font-weight: 700; color: var(--green); }
+
+.cb-btn {
+  font-size: 11px;
+  padding: 5px 10px;
+  background: rgba(124,111,247,.1);
+  border: 1px solid rgba(124,111,247,.3);
+  border-radius: 6px;
+  color: var(--accent);
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-block;
+}
+
+/* ── CHOLLOS ── */
+.chollo-title {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text);
+  margin-bottom: 8px;
+  padding-right: 50px;
+}
+
+.chollo-meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.chollo-price { font-size: 15px; font-weight: 700; color: var(--green); }
+.chollo-old   { font-size: 11px; color: var(--text3); text-decoration: line-through; }
+
+.votes {
+  margin-left: auto;
+  display: flex; align-items: center; gap: 4px;
+  font-size: 13px; font-weight: 700; color: var(--red);
+}
+
+.chollo-foot {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 7px;
+  font-size: 11px;
+  color: var(--text3);
+}
+
+.chollo-link {
+  margin-left: auto;
+  font-size: 11px;
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.hot-badge {
+  position: absolute;
+  top: 10px; right: 10px;
+  background: linear-gradient(135deg,#ef4444,#f97316);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 20px;
+}
+
+.card { position: relative; }
+
+/* ── ALERTS ── */
+.alert-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+}
+.alert-row:last-child { border-bottom: none; }
+
+.alert-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+  flex-shrink: 0;
+}
+.alert-dot.off { background: var(--text3); }
+
+.alert-info { flex: 1; }
+.alert-name2 { font-size: 13px; font-weight: 500; color: var(--text); }
+.alert-sub  { font-size: 11px; color: var(--text3); margin-top: 2px; }
+
+.toggle {
+  width: 40px; height: 22px;
+  background: var(--card2);
+  border: 1px solid var(--border2);
+  border-radius: 11px;
+  position: relative;
+  cursor: pointer;
+  transition: background .2s;
+  flex-shrink: 0;
+}
+.toggle.on { background: var(--accent); border-color: var(--accent); }
+.toggle::after {
+  content: '';
+  position: absolute;
+  top: 3px; left: 3px;
+  width: 14px; height: 14px;
+  background: #fff;
+  border-radius: 50%;
+  transition: transform .2s;
+}
+.toggle.on::after { transform: translateX(18px); }
+
+/* ── MISC ── */
+.info-bar {
+  background: rgba(245,158,11,.1);
+  border: 1px solid rgba(245,158,11,.25);
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 12px;
+  color: var(--amber);
+  margin-bottom: 12px;
+}
+
+.empty {
+  text-align: center;
+  padding: 48px 20px;
+}
+.empty-icon { font-size: 48px; margin-bottom: 12px; }
+.empty-title { font-size: 16px; font-weight: 600; color: var(--text); margin-bottom: 6px; }
+.empty-sub { font-size: 13px; color: var(--text3); line-height: 1.6; }
+
+.quick-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+  margin-top: 18px;
+}
+.qtag {
+  background: var(--card2);
+  border: 1px solid var(--border2);
+  color: var(--text2);
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  cursor: pointer;
+}
+.qtag:active { background: var(--card); }
+
+.add-btn {
+  width: 100%;
+  padding: 12px;
+  background: rgba(124,111,247,.1);
+  border: 1px dashed rgba(124,111,247,.4);
+  border-radius: var(--r);
+  color: var(--accent);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  margin-top: 8px;
+}
+
+.reload-btn {
+  width: 100%;
+  padding: 11px;
+  background: var(--card2);
+  border: 1px solid var(--border2);
+  border-radius: var(--r);
+  color: var(--text2);
+  font-size: 13px;
+  cursor: pointer;
+  margin-top: 4px;
+}
+
+.loader {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 50px 20px;
+  color: var(--text3);
+  font-size: 13px;
+}
+.spin {
+  width: 24px; height: 24px;
+  border: 2px solid var(--border2);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin .7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.caption {
+  font-size: 11px;
+  color: var(--text3);
+  text-align: center;
+  padding: 4px 0 8px;
+}
+
+/* ── BOTTOM NAV ── */
+.bnav {
+  display: flex;
+  background: var(--bg3);
+  border-top: 1px solid var(--border);
+  padding: 8px 0;
+  padding-bottom: max(8px, env(safe-area-inset-bottom));
+  flex-shrink: 0;
+}
+
+.bnav button {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px 0;
+}
+
+.bnav button .bi { font-size: 20px; }
+.bnav button .bl { font-size: 10px; color: var(--text3); }
+.bnav button.active .bl { color: var(--accent); }
+
+/* ── TOAST ── */
+#toast {
+  position: fixed;
+  bottom: 88px;
+  left: 50%; transform: translateX(-50%) translateY(12px);
+  background: var(--card2);
+  border: 1px solid var(--border2);
+  color: var(--text);
+  padding: 9px 18px;
+  border-radius: 20px;
+  font-size: 13px;
+  opacity: 0;
+  transition: opacity .25s, transform .25s;
+  pointer-events: none;
+  white-space: nowrap;
+  max-width: 90vw;
+  z-index: 99;
+}
+#toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+</style>
 </head>
 <body>
 
 <div id="app">
 
   <!-- HEADER -->
-  <header class="app-header">
-    <div class="header-top">
-      <div class="logo">
-        <div class="logo-icon">🎯</div>
-        <span class="logo-text">PriceHunter</span>
-      </div>
-      <div class="notif-btn" title="Notificaciones" onclick="requestNotifPermission()">
-        🔔
-        <span class="notif-badge" id="notifBadge" style="display:none"></span>
-      </div>
+  <div class="header">
+    <div class="header-row">
+      <div class="logo">🎯 Price<span>Hunter</span></div>
+      <button class="notif-btn" id="notifBtn">🔔</button>
     </div>
-
-    <div class="search-wrap">
-      <input
-        class="search-input"
-        id="searchInput"
-        type="search"
-        placeholder="Busca un producto, ej: Xiaomi Note 14 Pro+"
-        autocomplete="off"
-        autocorrect="off"
-        spellcheck="false"
-      />
-      <button class="search-btn" id="searchBtn" aria-label="Buscar">🔍</button>
+    <div class="search-row">
+      <input id="searchInput" type="search" placeholder="Busca un producto…" autocomplete="off">
+      <button id="searchBtn">Buscar</button>
     </div>
+    <div class="tabs">
+      <button class="active" data-tab="search">🔍 Comparar</button>
+      <button data-tab="cashback">💰 Cashback</button>
+      <button data-tab="chollos">🔥 Chollos</button>
+      <button data-tab="alerts">🔔 Alertas</button>
+    </div>
+  </div>
 
-    <nav class="tabs" role="tablist">
-      <button class="tab-btn active" data-tab="search" role="tab">🔎 Comparar</button>
-      <button class="tab-btn" data-tab="cashback" role="tab">💰 Cashback</button>
-      <button class="tab-btn" data-tab="chollos" role="tab"><span class="tab-label">🔥 Chollos</span></button>
-      <button class="tab-btn" data-tab="alerts" role="tab">🔔 Alertas</button>
-    </nav>
-  </header>
+  <!-- CONTENT -->
+  <div class="scroll">
 
-  <!-- CONTENT PANELS -->
-  <main class="scroll-area">
-
-    <!-- SEARCH -->
-    <div id="panel-search" class="tab-panel">
-      <div class="empty-state">
+    <!-- SEARCH PANEL -->
+    <div id="panel-search" class="panel active">
+      <div class="empty" id="search-empty">
         <div class="empty-icon">🎯</div>
-        <div class="empty-title">Busca y compara precios</div>
-        <div class="empty-sub">
-          Escribe el nombre de un producto para comparar precios en AliExpress, Miravia y más tiendas. También verás el cashback disponible.
+        <div class="empty-title">Compara precios al instante</div>
+        <div class="empty-sub">Busca cualquier producto y compararemos precios en AliExpress, Miravia y más tiendas.</div>
+        <div class="quick-tags">
+          <div class="qtag" onclick="quickSearch('Xiaomi 14T Pro')">📱 Xiaomi 14T Pro</div>
+          <div class="qtag" onclick="quickSearch('AirPods Pro 2')">🎧 AirPods Pro 2</div>
+          <div class="qtag" onclick="quickSearch('Samsung S25')">📱 Samsung S25</div>
+          <div class="qtag" onclick="quickSearch('Nintendo Switch')">🎮 Nintendo Switch</div>
+          <div class="qtag" onclick="quickSearch('Dyson V15')">🧹 Dyson V15</div>
         </div>
-        <div style="margin-top:20px;display:flex;flex-wrap:wrap;gap:8px;justify-content:center">
-          <button onclick="quickSearch('Xiaomi 14T Pro')" style="background:var(--card2);border:1px solid var(--border2);color:var(--text2);padding:6px 12px;border-radius:20px;font-size:12px;cursor:pointer">📱 Xiaomi 14T Pro</button>
-          <button onclick="quickSearch('AirPods Pro')" style="background:var(--card2);border:1px solid var(--border2);color:var(--text2);padding:6px 12px;border-radius:20px;font-size:12px;cursor:pointer">🎧 AirPods Pro</button>
-          <button onclick="quickSearch('Samsung S25')" style="background:var(--card2);border:1px solid var(--border2);color:var(--text2);padding:6px 12px;border-radius:20px;font-size:12px;cursor:pointer">📱 Samsung S25</button>
-          <button onclick="quickSearch('Nintendo Switch')" style="background:var(--card2);border:1px solid var(--border2);color:var(--text2);padding:6px 12px;border-radius:20px;font-size:12px;cursor:pointer">🎮 Nintendo Switch</button>
-        </div>
+      </div>
+      <div id="search-results"></div>
+    </div>
+
+    <!-- CASHBACK PANEL -->
+    <div id="panel-cashback" class="panel">
+      <div class="info-bar">💡 Activa el cashback ANTES de entrar a la tienda</div>
+      <div class="section-label">Mejores cashbacks disponibles</div>
+      <div class="card" id="cb-list"></div>
+      <div class="card" style="margin-top:8px;font-size:12px;color:var(--text2);line-height:2">
+        <div>1. Pulsa <b style="color:var(--text)">Activar</b> en la plataforma que prefieras</div>
+        <div>2. Se abre la tienda (AliExpress, etc.) con el cashback activo</div>
+        <div>3. Compra con normalidad</div>
+        <div>4. El reembolso llega en 30–90 días</div>
       </div>
     </div>
 
-    <!-- CASHBACK -->
-    <div id="panel-cashback" class="tab-panel hidden">
-      <div class="loading-wrap"><div class="spinner"></div></div>
+    <!-- CHOLLOS PANEL -->
+    <div id="panel-chollos" class="panel">
+      <div id="chollos-content">
+        <div class="loader"><div class="spin"></div><span>Cargando chollos...</span></div>
+      </div>
     </div>
 
-    <!-- CHOLLOS -->
-    <div id="panel-chollos" class="tab-panel hidden">
-      <div class="loading-wrap"><div class="spinner"></div><span>Cargando chollos...</span></div>
+    <!-- ALERTS PANEL -->
+    <div id="panel-alerts" class="panel">
+      <div id="alerts-content"></div>
     </div>
 
-    <!-- ALERTS -->
-    <div id="panel-alerts" class="tab-panel hidden">
-      <div class="loading-wrap"><div class="spinner"></div></div>
-    </div>
-
-  </main>
+  </div>
 
   <!-- BOTTOM NAV -->
-  <nav class="bottom-nav" role="navigation">
-    <button class="bnav-item active" data-tab="search">
-      <span class="bnav-icon">🔍</span>
-      <span class="bnav-label">Buscar</span>
-    </button>
-    <button class="bnav-item" data-tab="cashback">
-      <span class="bnav-icon">💰</span>
-      <span class="bnav-label">Cashback</span>
-    </button>
-    <button class="bnav-item" data-tab="chollos">
-      <span class="bnav-icon">🔥</span>
-      <span class="bnav-label">Chollos</span>
-    </button>
-    <button class="bnav-item" data-tab="alerts">
-      <span class="bnav-icon">🔔</span>
-      <span class="bnav-label">Alertas</span>
-    </button>
-  </nav>
+  <div class="bnav">
+    <button class="active" data-tab="search"><span class="bi">🔍</span><span class="bl">Buscar</span></button>
+    <button data-tab="cashback"><span class="bi">💰</span><span class="bl">Cashback</span></button>
+    <button data-tab="chollos"><span class="bi">🔥</span><span class="bl">Chollos</span></button>
+    <button data-tab="alerts"><span class="bi">🔔</span><span class="bl">Alertas</span></button>
+  </div>
 
 </div>
 
-<!-- TOAST -->
-<div class="toast" id="toast"></div>
+<div id="toast"></div>
 
-<script src="/js/app.js"></script>
 <script>
-  function quickSearch(q) {
-    document.getElementById('searchInput').value = q;
-    document.getElementById('searchBtn').click();
-  }
+// ─────────────────────────────────────────────
+// DATA
+// ─────────────────────────────────────────────
+var CB = [
+  { name:'iGraal',      icon:'🎁', store:'AliExpress', pct:4.5, url:'https://es.igraal.com/codes-promo/AliExpress' },
+  { name:'TopCashback', icon:'💎', store:'AliExpress', pct:3.8, url:'https://www.topcashback.es' },
+  { name:'Cashrewards', icon:'💰', store:'AliExpress', pct:5.0, url:'https://www.cashrewards.com.au' },
+  { name:'Rakuten',     icon:'🔴', store:'AliExpress', pct:2.5, url:'https://www.rakuten.es' },
+  { name:'iGraal',      icon:'🎁', store:'Miravia',    pct:3.0, url:'https://es.igraal.com' },
+  { name:'TopCashback', icon:'💎', store:'Amazon',     pct:1.5, url:'https://www.topcashback.es' },
+  { name:'BeRuby',      icon:'🟢', store:'AliExpress', pct:2.2, url:'https://www.beruby.com' },
+  { name:'Rakuten',     icon:'🔴', store:'eBay',       pct:1.0, url:'https://www.rakuten.es' },
+];
 
-  function requestNotifPermission() {
-    if ('Notification' in window && Notification.permission === 'default') {
-      Notification.requestPermission().then(perm => {
-        if (perm === 'granted') {
-          showToast('✅ Notificaciones activadas');
-          document.getElementById('notifBadge').style.display = 'none';
-        }
-      });
-    } else if (Notification.permission === 'granted') {
-      showToast('Las notificaciones ya están activadas');
+var DEMO_CHOLLOS = [
+  { title:'Xiaomi Redmi Note 13 Pro 256GB',      price:199, prev:329, votes:847, time:'hace 12 min', cat:'Móviles',  link:'https://www.chollometro.com' },
+  { title:'AirPods Pro 2 — precio mínimo',       price:189, prev:279, votes:623, time:'hace 34 min', cat:'Audio',    link:'https://www.chollometro.com' },
+  { title:'Dyson V15 Detect inalámbrico',        price:399, prev:649, votes:512, time:'hace 1h',     cat:'Hogar',    link:'https://www.chollometro.com' },
+  { title:'SSD Samsung 990 Pro 2TB NVMe',        price:89,  prev:149, votes:401, time:'hace 2h',     cat:'PC',       link:'https://www.chollometro.com' },
+  { title:'Nintendo Switch OLED + Mario Kart',   price:299, prev:349, votes:387, time:'hace 3h',     cat:'Gaming',   link:'https://www.chollometro.com' },
+  { title:'Sony WH-1000XM5 auriculares ANC',     price:249, prev:399, votes:334, time:'hace 4h',     cat:'Audio',    link:'https://www.chollometro.com' },
+  { title:'iPad 10ª generación 64GB WiFi',       price:379, prev:479, votes:290, time:'hace 5h',     cat:'Tablets',  link:'https://www.chollometro.com' },
+  { title:'Xiaomi Robot Vacuum S10 navegación',  price:149, prev:279, votes:245, time:'hace 6h',     cat:'Hogar',    link:'https://www.chollometro.com' },
+];
+
+// ─────────────────────────────────────────────
+// STATE
+// ─────────────────────────────────────────────
+var currentTab    = 'search';
+var searchResults = [];
+var chollosData   = [];
+var chollosLoaded = false;
+var alerts        = JSON.parse(localStorage.getItem('ph_alerts') || '[]');
+
+// ─────────────────────────────────────────────
+// TOAST
+// ─────────────────────────────────────────────
+function toast(msg) {
+  var el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  setTimeout(function() { el.classList.remove('show'); }, 2800);
+}
+
+// ─────────────────────────────────────────────
+// NAVIGATION
+// ─────────────────────────────────────────────
+function switchTab(tab) {
+  currentTab = tab;
+
+  // Tab buttons in header
+  document.querySelectorAll('.tabs button').forEach(function(b) {
+    b.classList.toggle('active', b.dataset.tab === tab);
+  });
+
+  // Bottom nav buttons
+  document.querySelectorAll('.bnav button').forEach(function(b) {
+    b.classList.toggle('active', b.dataset.tab === tab);
+  });
+
+  // Panels
+  document.querySelectorAll('.panel').forEach(function(p) {
+    p.classList.toggle('active', p.id === 'panel-' + tab);
+  });
+
+  if (tab === 'cashback') renderCashback();
+  if (tab === 'chollos' && !chollosLoaded) loadChollos();
+  if (tab === 'alerts')   renderAlerts();
+}
+
+// Wire up tab buttons
+document.querySelectorAll('.tabs button, .bnav button').forEach(function(b) {
+  b.addEventListener('click', function() {
+    switchTab(b.dataset.tab);
+  });
+});
+
+// ─────────────────────────────────────────────
+// SEARCH
+// ─────────────────────────────────────────────
+document.getElementById('searchBtn').addEventListener('click', doSearch);
+document.getElementById('searchInput').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') doSearch();
+});
+
+function quickSearch(q) {
+  document.getElementById('searchInput').value = q;
+  doSearch();
+}
+
+function doSearch() {
+  var q = document.getElementById('searchInput').value.trim();
+  if (!q) return;
+
+  switchTab('search');
+  document.getElementById('search-empty').style.display = 'none';
+  document.getElementById('search-results').innerHTML =
+    '<div class="loader"><div class="spin"></div><span>Buscando "' + q + '"…</span></div>';
+
+  var btn = document.getElementById('searchBtn');
+  btn.disabled = true;
+  btn.textContent = '…';
+
+  // Call Netlify Functions in parallel
+  Promise.allSettled([
+    fetch('/.netlify/functions/search-aliexpress?q=' + encodeURIComponent(q)).then(function(r){ return r.json(); }),
+    fetch('/.netlify/functions/search-miravia?q='    + encodeURIComponent(q)).then(function(r){ return r.json(); })
+  ]).then(function(results) {
+    var ali = results[0].status === 'fulfilled' ? (results[0].value.results || []) : [];
+    var mir = results[1].status === 'fulfilled' ? (results[1].value.results || []) : [];
+    searchResults = mergeSort(ali.concat(mir));
+    renderResults(q);
+  }).catch(function() {
+    renderError('search-results', 'Error de conexión. Inténtalo de nuevo.');
+  }).finally(function() {
+    btn.disabled = false;
+    btn.textContent = 'Buscar';
+  });
+}
+
+function mergeSort(items) {
+  var groups = {};
+  items.forEach(function(item) {
+    if (item.isSearchLink) return;
+    var key = item.title.toLowerCase().replace(/[^a-z0-9]/g,'').substring(0,30);
+    if (!groups[key]) {
+      groups[key] = Object.assign({}, item, { stores: [{ store: item.store, price: item.price, url: item.url }] });
+    } else {
+      groups[key].stores.push({ store: item.store, price: item.price, url: item.url });
+      if (item.price < groups[key].price) {
+        groups[key].price = item.price;
+        groups[key].url   = item.url;
+        if (item.image) groups[key].image = item.image;
+      }
     }
+  });
+  return Object.values(groups).sort(function(a,b){ return a.price - b.price; });
+}
+
+function renderResults(q) {
+  var el = document.getElementById('search-results');
+  if (!searchResults.length) {
+    el.innerHTML = '<div class="empty"><div class="empty-icon">🔍</div><div class="empty-title">Sin resultados</div><div class="empty-sub">No encontramos "' + q + '".<br>Prueba con otro término.</div></div>';
+    return;
   }
 
-  // Show notif badge if not yet granted
-  if ('Notification' in window && Notification.permission === 'default') {
-    document.getElementById('notifBadge').style.display = 'block';
+  var maxCB = Math.max.apply(null, CB.map(function(c){ return c.pct; }));
+  var html = '<div class="info-bar">💰 Activa cashback antes de comprar · hasta ' + maxCB + '% de vuelta</div>';
+  html += '<div class="section-label">' + searchResults.length + ' resultados · ' + q + '</div>';
+
+  searchResults.forEach(function(item, i) {
+    var disc = (item.originalPrice > item.price)
+      ? Math.round((1 - item.price / item.originalPrice) * 100) : 0;
+    var storeCBs = CB.filter(function(c) {
+      return (item.stores || [{store:item.store}]).some(function(s){ return s.store === c.store; });
+    });
+    var bestCB = storeCBs.length ? Math.max.apply(null, storeCBs.map(function(c){ return c.pct; })) : 0;
+
+    var chips = (item.stores || [{store:item.store,price:item.price,url:item.url}])
+      .slice().sort(function(a,b){ return a.price-b.price; })
+      .map(function(s, si) {
+        return '<span class="chip ' + (si===0?'best':'') + '" onclick="openUrl(\'' + s.url + '\')">'
+          + (si===0?'✓ ':'') + s.store + (s.price?' ' + fmt(s.price):'') + '</span>';
+      }).join('');
+
+    html += '<div class="card">'
+      + '<div class="prod">'
+      + '<div class="prod-img">'
+      + (item.image ? '<img src="' + item.image + '" onerror="this.parentElement.innerHTML=\'📦\'" loading="lazy">' : '📦')
+      + '</div>'
+      + '<div class="prod-info">'
+      + '<div class="prod-title">' + item.title + '</div>'
+      + '<div class="price-row">'
+      + '<span class="price-main">' + fmt(item.price) + '</span>'
+      + (item.originalPrice > item.price ? '<span class="price-old">' + fmt(item.originalPrice) + '</span>' : '')
+      + (disc ? '<span class="badge b-red">-' + disc + '%</span>' : '')
+      + (bestCB ? '<span class="badge b-green">+' + bestCB + '% CB</span>' : '')
+      + (i===0 ? '<span class="badge b-blue">🏆 Más barato</span>' : '')
+      + '</div>'
+      + '<div class="store-chips">' + chips + '</div>'
+      + '</div></div></div>';
+  });
+
+  html += '<div class="caption">Datos obtenidos en tiempo real · ' + new Date().toLocaleTimeString('es-ES') + '</div>';
+  el.innerHTML = html;
+}
+
+// ─────────────────────────────────────────────
+// CASHBACK
+// ─────────────────────────────────────────────
+function renderCashback() {
+  var list = CB.slice().sort(function(a,b){ return b.pct - a.pct; });
+  var html = '';
+  list.forEach(function(c) {
+    html += '<div class="cb-row">'
+      + '<div class="cb-left">'
+      + '<div class="cb-icon">' + c.icon + '</div>'
+      + '<div><div class="cb-name">' + c.name + '</div><div class="cb-store">' + c.store + '</div></div>'
+      + '</div>'
+      + '<div style="display:flex;align-items:center;gap:10px">'
+      + '<div class="cb-pct">' + c.pct + '%</div>'
+      + '<a class="cb-btn" href="' + c.url + '" target="_blank" rel="noopener">Activar →</a>'
+      + '</div>'
+      + '</div>';
+  });
+  document.getElementById('cb-list').innerHTML = html;
+}
+
+// ─────────────────────────────────────────────
+// CHOLLOS
+// ─────────────────────────────────────────────
+function loadChollos() {
+  chollosLoaded = true;
+  fetch('/.netlify/functions/chollos')
+    .then(function(r){ return r.json(); })
+    .then(function(data) {
+      chollosData = data.chollos || [];
+      if (!chollosData.length) throw new Error('empty');
+      renderChollos();
+    })
+    .catch(function() {
+      chollosData = DEMO_CHOLLOS;
+      renderChollos();
+    });
+}
+
+function renderChollos() {
+  var hot  = chollosData.filter(function(c){ return c.votes >= 250; });
+  var html = '';
+  if (hot.length) html += '<div class="info-bar">🔥 ' + hot.length + ' chollos con +250° ahora mismo</div>';
+  html += '<div class="section-label">Más votados</div>';
+
+  chollosData.slice(0,25).forEach(function(c) {
+    var disc = (c.price && c.prev) ? Math.round((1 - c.price/c.prev)*100) : 0;
+    html += '<div class="card">'
+      + (c.votes>=300 ? '<div class="hot-badge">🔥 HOT</div>' : '')
+      + '<div class="chollo-title">' + c.title + '</div>'
+      + '<div class="chollo-meta">'
+      + (c.price ? '<span class="chollo-price">' + fmt(c.price) + '</span>' : '')
+      + (c.prev  ? '<span class="chollo-old">'   + fmt(c.prev)  + '</span>' : '')
+      + (disc    ? '<span class="badge b-red">-'  + disc + '%</span>' : '')
+      + '<div class="votes">🌡️ ' + c.votes + '°</div>'
+      + '</div>'
+      + '<div class="chollo-foot">'
+      + '🕐 ' + (c.time||c.timeAgo||'') + ' · ' + (c.cat||c.category||'')
+      + '<a class="chollo-link" href="' + c.link + '" target="_blank" rel="noopener">Ver →</a>'
+      + '</div>'
+      + '</div>';
+  });
+
+  html += '<button class="reload-btn" onclick="reloadChollos()">🔄 Actualizar chollos</button>';
+  document.getElementById('chollos-content').innerHTML = html;
+}
+
+function reloadChollos() {
+  document.getElementById('chollos-content').innerHTML =
+    '<div class="loader"><div class="spin"></div><span>Actualizando...</span></div>';
+  chollosLoaded = false;
+  loadChollos();
+}
+
+// ─────────────────────────────────────────────
+// ALERTS
+// ─────────────────────────────────────────────
+function renderAlerts() {
+  var html = '<div class="section-label">Mis alertas</div>';
+
+  if (!alerts.length) {
+    html += '<div class="empty"><div class="empty-icon">🔔</div>'
+      + '<div class="empty-title">Sin alertas</div>'
+      + '<div class="empty-sub">Crea alertas para que te avisemos cuando un producto baje de precio.</div></div>';
+  } else {
+    html += '<div class="card">';
+    alerts.forEach(function(a, i) {
+      html += '<div class="alert-row">'
+        + '<div class="alert-dot ' + (a.active?'':'off') + '"></div>'
+        + '<div class="alert-info">'
+        + '<div class="alert-name2">' + a.product + '</div>'
+        + '<div class="alert-sub">Objetivo: ' + (a.targetPrice ? fmt(a.targetPrice) : 'cualquier bajada') + '</div>'
+        + '</div>'
+        + '<div class="toggle ' + (a.active?'on':'') + '" onclick="toggleAlert(' + i + ')"></div>'
+        + '</div>';
+    });
+    html += '</div>';
   }
+
+  html += '<button class="add-btn" onclick="addAlert()">+ Nueva alerta de precio</button>';
+  document.getElementById('alerts-content').innerHTML = html;
+}
+
+function toggleAlert(i) {
+  alerts[i].active = !alerts[i].active;
+  localStorage.setItem('ph_alerts', JSON.stringify(alerts));
+  renderAlerts();
+}
+
+function addAlert() {
+  var product = document.getElementById('searchInput').value.trim()
+    || prompt('¿Qué producto quieres vigilar?');
+  if (!product) return;
+  var ps = prompt('Precio objetivo para "' + product + '" (vacío = cualquier bajada):');
+  var tp = ps ? parseFloat(ps.replace(',','.')) : null;
+  alerts.unshift({ product: product, targetPrice: tp, active: true });
+  localStorage.setItem('ph_alerts', JSON.stringify(alerts));
+  renderAlerts();
+  toast('✅ Alerta creada para "' + product + '"');
+}
+
+// ─────────────────────────────────────────────
+// UTILS
+// ─────────────────────────────────────────────
+function fmt(n) {
+  return new Intl.NumberFormat('es-ES',{style:'currency',currency:'EUR'}).format(n);
+}
+
+function openUrl(url) {
+  window.open(url, '_blank', 'noopener');
+}
+
+// ─────────────────────────────────────────────
+// NOTIFICATIONS
+// ─────────────────────────────────────────────
+document.getElementById('notifBtn').addEventListener('click', function() {
+  if (!('Notification' in window)) { toast('Tu navegador no soporta notificaciones'); return; }
+  if (Notification.permission === 'granted') { toast('✅ Notificaciones ya activadas'); return; }
+  Notification.requestPermission().then(function(p) {
+    toast(p === 'granted' ? '✅ Notificaciones activadas' : 'Notificaciones denegadas');
+  });
+});
+
+// ─────────────────────────────────────────────
+// SERVICE WORKER
+// ─────────────────────────────────────────────
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js').catch(function(){});
+}
 </script>
 </body>
 </html>
