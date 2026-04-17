@@ -201,10 +201,10 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:-apple-
 
   <!-- CHOLLOS -->
   <div id="pnl-chollos" class="pnl">
-    <div class="ctabs">
-      <button class="ctab on" data-ctab="hot"       onclick="switchCTab(this,'hot')">🔥 Más votados</button>
-      <button class="ctab"    data-ctab="fresh"     onclick="switchCTab(this,'fresh')">🆕 Recientes</button>
-      <button class="ctab"    data-ctab="commented" onclick="switchCTab(this,'commented')">💬 Comentados</button>
+    <div class="ctabs" id="ctabs-wrap">
+      <button class="ctab on" data-ctab="hot">🔥 Más votados</button>
+      <button class="ctab"    data-ctab="fresh">🆕 Recientes</button>
+      <button class="ctab"    data-ctab="commented">💬 Comentados</button>
     </div>
     <div id="chollos-body"><div class="ldr"><div class="spin"></div><span>Cargando chollos…</span></div></div>
   </div>
@@ -286,25 +286,87 @@ function doSearch() {
   if (!q) return;
 
   switchTab('search');
-  setHTML('search-body', loader('Buscando "' + q + '" en todas las tiendas…'));
+  setHTML('search-body', loader('Buscando "' + q + '"…'));
 
   var btn = document.getElementById('searchBtn');
   btn.disabled = true; btn.textContent = '…';
 
-  // Call our Netlify Function
+  // Try Netlify function; if not available fall back to client-side search
   fetch('/.netlify/functions/search?q=' + encodeURIComponent(q))
-    .then(function(r){ return r.ok ? r.json() : Promise.reject(r.status); })
+    .then(function(r){
+      if (!r.ok) throw new Error('no-function');
+      return r.json();
+    })
     .then(function(data){
       RESULTS = data.results || [];
+      if (!RESULTS.length) throw new Error('empty');
       renderResults(q);
     })
-    .catch(function(err){
-      // If function not deployed yet, show helpful direct links
-      renderSearchFallback(q);
+    .catch(function(){
+      // Netlify function not deployed → do client-side search via public proxy
+      doClientSearch(q);
     })
     .finally(function(){
       btn.disabled = false; btn.textContent = 'Buscar';
     });
+}
+
+function doClientSearch(q) {
+  // Use allorigins proxy to search Google Shopping RSS — works from browser
+  var proxy = 'https://api.allorigins.win/raw?url=';
+  var googleShop = proxy + encodeURIComponent('https://www.google.com/search?q=' + encodeURIComponent(q) + '&tbm=shop&hl=es&gl=ES&num=20&output=rss');
+
+  fetch(googleShop)
+    .then(function(r){ return r.ok ? r.text() : Promise.reject('proxy-fail'); })
+    .then(function(xml){
+      var items = parseGoogleShopRSS(xml, q);
+      if (items.length > 0) {
+        RESULTS = items;
+        renderResults(q);
+      } else {
+        renderSearchFallback(q);
+      }
+    })
+    .catch(function(){
+      renderSearchFallback(q);
+    });
+}
+
+function parseGoogleShopRSS(xml, q) {
+  var results = [];
+  var blocks = xml.match(/<item>([\s\S]*?)<\/item>/gi) || [];
+  blocks.slice(0,20).forEach(function(block){
+    var title   = cdataTag(block,'title');
+    var link    = cdataTag(block,'link') || cdataTag(block,'g:link');
+    var priceRaw= cdataTag(block,'g:price') || cdataTag(block,'price') || '';
+    var store   = cdataTag(block,'g:store') || cdataTag(block,'author') || 'Tienda';
+    var img     = cdataTag(block,'g:image_link') || '';
+    var price   = parseShopPrice(priceRaw);
+    if (!title || price <= 0) return;
+    results.push({
+      title: title.replace(/&amp;/g,'&').replace(/&quot;/g,'"').trim(),
+      price: price,
+      originalPrice: 0,
+      store: store.trim(),
+      url: link || ('https://www.google.es/search?q='+encodeURIComponent(q)+'&tbm=shop'),
+      image: img || null
+    });
+  });
+  return results.sort(function(a,b){ return a.price - b.price; });
+}
+
+function cdataTag(xml, tag) {
+  var r = new RegExp('<'+tag+'[^>]*><!\\[CDATA\\[([\\s\\S]*?)\\]\\]></'+tag+'>','i');
+  var m = xml.match(r) || xml.match(new RegExp('<'+tag+'[^>]*>([^<]*)</'+tag+'>','i'));
+  return m ? m[1].trim() : null;
+}
+
+function parseShopPrice(s) {
+  if (!s) return 0;
+  var clean = s.replace(/[^0-9.,]/g,'');
+  if (!clean) return 0;
+  if (/,\d{2}$/.test(clean)) return parseFloat(clean.replace(/\./g,'').replace(',','.'));
+  return parseFloat(clean.replace(',','')) || 0;
 }
 
 function renderResults(q) {
@@ -379,16 +441,64 @@ function lnkCard(name, icon, url) {
 // ════════════════════════════════════════════
 function loadCashback() {
   CB_LOADED = true;
+  // Try Netlify function first, then fall back to client-side scraping via CORS proxy
   fetch('/.netlify/functions/cashback')
-    .then(function(r){ return r.ok ? r.json() : Promise.reject(); })
+    .then(function(r){ return r.ok ? r.json() : Promise.reject('no-function'); })
     .then(function(data){
       CB_DATA = data;
       renderCashback();
     })
     .catch(function(){
-      CB_DATA = { cashback: staticCB(), updated: null };
-      renderCashback();
+      // Function not available or failed → try to fetch real rates client-side
+      fetchCashbackClientSide();
     });
+}
+
+function fetchCashbackClientSide() {
+  // Use allorigins as CORS proxy to fetch real cashback pages
+  var proxy = 'https://api.allorigins.win/raw?url=';
+  var targets = [
+    { name:'iGraal',      icon:'🎁', store:'AliExpress', url:'https://es.igraal.com/codes-promo/aliexpress',        scrapeUrl: proxy + encodeURIComponent('https://es.igraal.com/codes-promo/aliexpress') },
+    { name:'TopCashback', icon:'💎', store:'AliExpress', url:'https://www.topcashback.es/tiendas/aliexpress/',       scrapeUrl: proxy + encodeURIComponent('https://www.topcashback.es/tiendas/aliexpress/') },
+    { name:'Rakuten',     icon:'🔴', store:'AliExpress', url:'https://www.rakuten.es',                               scrapeUrl: proxy + encodeURIComponent('https://www.rakuten.es/stores/aliexpress/') },
+    { name:'BeRuby',      icon:'🟢', store:'AliExpress', url:'https://www.beruby.com',                               scrapeUrl: proxy + encodeURIComponent('https://www.beruby.com/cashback-tiendas') },
+  ];
+
+  var promises = targets.map(function(t){
+    return fetch(t.scrapeUrl, { signal: AbortSignal.timeout ? AbortSignal.timeout(8000) : undefined })
+      .then(function(r){ return r.ok ? r.text() : ''; })
+      .then(function(html){
+        // Try multiple patterns to extract cashback %
+        var m = html.match(/(\d+(?:[.,]\d+)?)\s*%\s*(?:de\s+)?(?:cashback|reembolso|devolución)/i)
+          || html.match(/(?:cashback|reembolso)[^<]{0,80}?(\d+(?:[.,]\d+)?)\s*%/i)
+          || html.match(/>(\d+(?:[.,]\d+)?)\s*%</);
+        var pct = m ? parseFloat(m[1].replace(',','.')) : 0;
+        // Sanity check: cashback is normally 0.5%–15%
+        if (pct <= 0 || pct > 15) return Object.assign({}, t, { pct: null, source: 'estimated' });
+        return Object.assign({}, t, { pct: pct, source: 'live' });
+      })
+      .catch(function(){ return Object.assign({}, t, { pct: null, source: 'estimated' }); });
+  });
+
+  // Also add fixed known platforms that rarely change much
+  var extra = [
+    { name:'TopCashback', icon:'💎', store:'Amazon',  pct:null, url:'https://www.topcashback.es/tiendas/amazon/', source:'estimated' },
+    { name:'Rakuten',     icon:'🔴', store:'eBay',    pct:null, url:'https://www.rakuten.es',                     source:'estimated' },
+  ];
+
+  Promise.all(promises).then(function(results){
+    // Fill in defaults for ones where scraping failed
+    var defaults = { 'iGraal':2.0, 'TopCashback':2.5, 'Rakuten':1.5, 'BeRuby':1.8 };
+    var cashback = results.map(function(r){
+      if (!r.pct) r.pct = defaults[r.name] || 1.0;
+      return r;
+    }).concat(extra.map(function(e){
+      e.pct = e.pct || defaults[e.name] || 1.0;
+      return e;
+    }));
+    CB_DATA = { cashback: cashback, updated: new Date().toISOString() };
+    renderCashback();
+  });
 }
 
 function staticCB() {
@@ -465,9 +575,11 @@ function loadChollos() {
     });
 }
 
-function switchCTab(btn, tab) {
+function switchCTab(tab) {
   CTAB = tab;
-  document.querySelectorAll('.ctab').forEach(function(b){ b.classList.toggle('on', b.dataset.ctab === tab); });
+  document.querySelectorAll('.ctab').forEach(function(b){
+    b.classList.toggle('on', b.dataset.ctab === tab);
+  });
   renderChollosTab();
 }
 
@@ -518,12 +630,12 @@ function reloadChollos() {
 
 function DEMO_CH() {
   return [
-    {title:'Xiaomi Redmi Note 13 Pro 256GB',     price:199,prev:329,prevPrice:329,votes:847,timeAgo:'hace 12 min',category:'Móviles',  comments:43,link:'https://www.chollometro.com'},
-    {title:'AirPods Pro 2 — precio mínimo',      price:189,prev:279,prevPrice:279,votes:623,timeAgo:'hace 34 min',category:'Audio',    comments:31,link:'https://www.chollometro.com'},
-    {title:'Dyson V15 Detect inalámbrico',       price:399,prev:649,prevPrice:649,votes:512,timeAgo:'hace 1h',    category:'Hogar',    comments:27,link:'https://www.chollometro.com'},
-    {title:'SSD Samsung 990 Pro 2TB NVMe',       price:89, prev:149,prevPrice:149,votes:401,timeAgo:'hace 2h',    category:'PC',       comments:19,link:'https://www.chollometro.com'},
-    {title:'Nintendo Switch OLED + Mario Kart',  price:299,prev:349,prevPrice:349,votes:387,timeAgo:'hace 3h',    category:'Gaming',   comments:55,link:'https://www.chollometro.com'},
-    {title:'Sony WH-1000XM5 auriculares ANC',    price:249,prev:399,prevPrice:399,votes:334,timeAgo:'hace 4h',    category:'Audio',    comments:22,link:'https://www.chollometro.com'},
+    {title:'Xiaomi Redmi Note 13 Pro 256GB',     price:199, prevPrice:329, votes:847, timeAgo:'hace 12 min', category:'Móviles',  comments:43, link:'https://www.chollometro.com'},
+    {title:'AirPods Pro 2 — precio mínimo',      price:189, prevPrice:279, votes:623, timeAgo:'hace 34 min', category:'Audio',    comments:31, link:'https://www.chollometro.com'},
+    {title:'Dyson V15 Detect inalámbrico',       price:399, prevPrice:649, votes:512, timeAgo:'hace 1h',     category:'Hogar',    comments:27, link:'https://www.chollometro.com'},
+    {title:'SSD Samsung 990 Pro 2TB NVMe',       price:89,  prevPrice:149, votes:401, timeAgo:'hace 2h',     category:'PC',       comments:19, link:'https://www.chollometro.com'},
+    {title:'Nintendo Switch OLED + Mario Kart',  price:299, prevPrice:349, votes:387, timeAgo:'hace 3h',     category:'Gaming',   comments:55, link:'https://www.chollometro.com'},
+    {title:'Sony WH-1000XM5 auriculares ANC',    price:249, prevPrice:399, votes:334, timeAgo:'hace 4h',     category:'Audio',    comments:22, link:'https://www.chollometro.com'},
   ];
 }
 
@@ -626,6 +738,13 @@ function esc(s) {
 function goUrl(url) { window.open(url,'_blank','noopener'); }
 function setHTML(id, html) { var el = document.getElementById(id); if(el) el.innerHTML = html; }
 function loader(msg) { return '<div class="ldr"><div class="spin"></div><span>'+msg+'</span></div>'; }
+
+// ════════════════════════════════════════════
+// WIRE CTAB BUTTONS FROM JS (fixes mobile onclick issues)
+// ════════════════════════════════════════════
+document.querySelectorAll('.ctab').forEach(function(b){
+  b.addEventListener('click', function(){ switchCTab(b.dataset.ctab); });
+});
 
 // ════════════════════════════════════════════
 // SERVICE WORKER
