@@ -1,115 +1,132 @@
-exports.handler = async (event) => {
-  const headers = {
-    'Access-Control-Allow-Origin': '*',
-    'Content-Type': 'application/json',
-    'Cache-Control': 'public, max-age=120' // cache 2 min
-  };
+// chollos.js — Netlify Function
+// Fetches Chollometro RSS and returns items sorted by: hottest, most commented, most recent
 
-  if (event.httpMethod === 'OPTIONS') {
-    return { statusCode: 200, headers, body: '' };
-  }
+const HEADERS = {
+  'Access-Control-Allow-Origin': '*',
+  'Content-Type': 'application/json',
+  'Cache-Control': 'public, max-age=180' // 3 min cache
+};
+
+exports.handler = async (event) => {
+  if (event.httpMethod === 'OPTIONS') return { statusCode: 200, headers: HEADERS, body: '' };
 
   try {
-    const chollos = await fetchChollos();
-    return { statusCode: 200, headers, body: JSON.stringify({ chollos }) };
+    // Chollometro offers multiple RSS feeds
+    const [hot, fresh, commented] = await Promise.allSettled([
+      fetchRSS('https://www.chollometro.com/rss'),              // default = hottest
+      fetchRSS('https://www.chollometro.com/nuevos/rss'),       // newest
+      fetchRSS('https://www.chollometro.com/comentados/rss'),   // most commented
+    ]);
+
+    const hotItems       = hot.status       === 'fulfilled' ? hot.value       : [];
+    const freshItems     = fresh.status     === 'fulfilled' ? fresh.value     : [];
+    const commentedItems = commented.status === 'fulfilled' ? commented.value : [];
+
+    return {
+      statusCode: 200,
+      headers: HEADERS,
+      body: JSON.stringify({
+        hot:       hotItems,
+        fresh:     freshItems,
+        commented: commentedItems,
+        updated:   new Date().toISOString()
+      })
+    };
   } catch (e) {
-    console.error('Chollos error:', e.message);
-    return { statusCode: 200, headers, body: JSON.stringify({ chollos: [], error: e.message }) };
+    return { statusCode: 200, headers: HEADERS, body: JSON.stringify({ hot: [], fresh: [], commented: [], error: e.message }) };
   }
 };
 
-async function fetchChollos() {
-  const res = await fetch('https://www.chollometro.com/rss', {
+async function fetchRSS(url) {
+  const res = await fetch(url, {
     headers: {
-      'User-Agent': 'Mozilla/5.0 (compatible; PriceHunterBot/1.0)',
-      'Accept': 'application/rss+xml, application/xml, text/xml'
+      'User-Agent': 'Mozilla/5.0 (compatible; PriceHunterBot/1.0; +https://pricehunter.app)',
+      'Accept': 'application/rss+xml, application/xml, text/xml, */*'
     }
   });
 
+  if (!res.ok) throw new Error(`HTTP ${res.status} for ${url}`);
   const xml = await res.text();
   return parseRSS(xml);
 }
 
 function parseRSS(xml) {
   const items = [];
-  const itemMatches = xml.matchAll(/<item>([\s\S]*?)<\/item>/gi);
+  const blocks = xml.match(/<item>([\s\S]*?)<\/item>/gi) || [];
 
-  for (const match of itemMatches) {
-    const block = match[1];
+  for (const block of blocks.slice(0, 30)) {
+    const title    = cdata(block, 'title');
+    const link     = cdata(block, 'link') || cdata(block, 'guid');
+    const desc     = cdata(block, 'description') || '';
+    const pubDate  = cdata(block, 'pubDate') || '';
+    const category = cdata(block, 'category') || 'General';
+    const creator  = cdata(block, 'dc:creator') || '';
 
-    const title   = extractTag(block, 'title');
-    const link    = extractTag(block, 'link') || extractTag(block, 'guid');
-    const desc    = extractTag(block, 'description') || '';
-    const pubDate = extractTag(block, 'pubDate');
-    const category = extractTag(block, 'category') || 'General';
+    if (!title || !link) continue;
 
-    // Extract temperature/votes — Chollometro uses °
-    const tempMatch = desc.match(/(\d+)\s*°/) || title.match(/(\d+)\s*°/);
-    const votes = tempMatch ? parseInt(tempMatch[1]) : estimateVotes(desc);
+    // Temperature/votes — Chollometro embeds it as °
+    const tempM  = desc.match(/(\d+)\s*°/) || title.match(/(\d+)\s*°/);
+    const votes  = tempM ? parseInt(tempM[1]) : 0;
 
-    // Extract price from title or description
-    const priceMatch = (title + ' ' + desc).match(/([\d]+[.,][\d]{2})\s*€/)
-      || (title + ' ' + desc).match(/€\s*([\d]+[.,][\d]{2})/);
-    const price = priceMatch ? parseFloat(priceMatch[1].replace(',', '.')) : null;
+    // Comments count
+    const commM  = desc.match(/(\d+)\s*(?:comentarios?|comments?)/i);
+    const comments = commM ? parseInt(commM[1]) : 0;
 
-    // Extract previous/original price (often in strikethrough ~~ or "antes")
-    const prevMatch = desc.match(/antes[:\s]*([\d]+[.,][\d]{2})\s*€/i)
-      || desc.match(/~~([\d]+[.,][\d]{2})\s*€~~/)
-      || desc.match(/precio\s+original[:\s]*([\d]+[.,][\d]{2})\s*€/i);
-    const prevPrice = prevMatch ? parseFloat(prevMatch[1].replace(',', '.')) : null;
+    // Price
+    const priceM = (title + ' ' + desc).match(/([\d]+(?:[.,][\d]{2})?)\s*€/);
+    const price  = priceM ? parsePrice(priceM[1]) : null;
 
-    // Extract thumbnail image
-    const imgMatch = desc.match(/<img[^>]+src=["']([^"']+)["']/i);
-    const image = imgMatch ? imgMatch[1] : null;
+    // Previous price (strikethrough in HTML)
+    const prevM  = desc.match(/~~([\d]+(?:[.,][\d]{2})?)\s*€~~/)
+      || desc.match(/antes[:\s]*([\d]+(?:[.,][\d]{2})?)\s*€/i)
+      || desc.match(/<s>([\d]+(?:[.,][\d]{2})?)\s*€<\/s>/i);
+    const prevPrice = prevM ? parsePrice(prevM[1]) : null;
 
-    // Clean title (remove vote counts and extra info)
-    const cleanTitle = title
-      .replace(/\s*\|\s*chollometro.*/i, '')
+    // Thumbnail
+    const imgM  = desc.match(/<img[^>]+src=["']([^"']+)["']/i);
+    const image = imgM ? imgM[1] : null;
+
+    const cleanedTitle = title
+      .replace(/\s*\|\s*Chollometro.*/i, '')
       .replace(/\s*\(\d+°\)/, '')
       .trim();
 
-    if (cleanTitle && link) {
-      items.push({
-        title: cleanTitle,
-        link: link.trim(),
-        price,
-        prevPrice: prevPrice && price && prevPrice > price ? prevPrice : null,
-        votes,
-        category: category.trim(),
-        image,
-        pubDate,
-        timeAgo: timeAgo(pubDate)
-      });
-    }
-
-    if (items.length >= 40) break;
+    items.push({
+      title: cleanedTitle,
+      link: link.trim(),
+      price,
+      prevPrice: (prevPrice && price && prevPrice > price) ? prevPrice : null,
+      votes,
+      comments,
+      category: category.trim(),
+      image,
+      pubDate,
+      timeAgo: timeAgo(pubDate),
+      author: creator
+    });
   }
 
-  // Sort by votes descending
-  return items.sort((a, b) => b.votes - a.votes);
+  return items;
 }
 
-function extractTag(xml, tag) {
+function cdata(xml, tag) {
   const m = xml.match(new RegExp(`<${tag}[^>]*><!\\[CDATA\\[([\\s\\S]*?)\\]\\]><\\/${tag}>`, 'i'))
     || xml.match(new RegExp(`<${tag}[^>]*>([^<]*)<\\/${tag}>`, 'i'));
   return m ? m[1].trim() : null;
 }
 
-function estimateVotes(desc) {
-  // Some items don't show votes in RSS, estimate from description
-  if (desc.includes('destacado') || desc.includes('popular')) return 250;
-  return Math.floor(Math.random() * 150 + 30);
+function parsePrice(s) {
+  if (!s) return null;
+  return parseFloat(s.replace(/\./g, '').replace(',', '.')) || null;
 }
 
 function timeAgo(dateStr) {
   if (!dateStr) return 'reciente';
   try {
     const diff = Math.floor((Date.now() - new Date(dateStr)) / 1000);
-    if (diff < 60)    return 'hace ' + diff + ' seg';
+    if (diff < 60)    return 'hace ' + diff + 's';
     if (diff < 3600)  return 'hace ' + Math.floor(diff / 60) + ' min';
     if (diff < 86400) return 'hace ' + Math.floor(diff / 3600) + 'h';
     return 'hace ' + Math.floor(diff / 86400) + 'd';
-  } catch (e) {
-    return 'reciente';
-  }
+  } catch (_) { return 'reciente'; }
 }
