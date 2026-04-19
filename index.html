@@ -213,9 +213,8 @@ html,body{height:100%;background:var(--bg);color:var(--text);
     <!-- CHOLLOS -->
     <div id="pnl-chollos" class="pnl">
       <div class="ctabs" id="ctabsWrap">
-        <button class="ctab on"  data-ctab="hot"      >🔥 Votados</button>
-        <button class="ctab"     data-ctab="fresh"    >🆕 Recientes</button>
-        <button class="ctab"     data-ctab="commented">💬 Comentados</button>
+        <button class="ctab on" data-ctab="chollometro">🔥 Chollometro</button>
+        <button class="ctab"    data-ctab="chollero"   >⚡ Chollero.es</button>
       </div>
       <div id="chollosBody">
         <div class="ldr"><div class="spin"></div><span>Cargando chollos…</span></div>
@@ -256,6 +255,7 @@ function fmt(n){
   return new Intl.NumberFormat('es-ES',{style:'currency',currency:'EUR'}).format(n);
 }
 function goUrl(u){ window.open(u,'_blank','noopener'); }
+function extractDomain(url){ try{ return new URL(url).hostname.replace('www.',''); }catch(e){ return ''; } }
 function loader(m){ return '<div class="ldr"><div class="spin"></div><span>'+esc(m)+'</span></div>'; }
 function toast(msg){
   var el = $('toast');
@@ -402,8 +402,15 @@ function buscarErrores(q){
         var raw  = item['g:price'] || item.price || ''
           || (desc.match(/([\d]+[.,][\d]{2})\s*(?:EUR|€)/) || ['',''])[1];
         var price = pPrice(raw);
-        var store = item['g:store'] || item.author || '';
-        return price > 0 ? { title: item.title, price: price, store: store, url: item.link } : null;
+        var store = item['g:store'] || item.author || extractDomain(item.link) || '';
+        // Image: rss2json puts it in enclosure or g:image_link or thumbnail
+        var image = item['g:image_link'] || item.thumbnail || null;
+        if (image && image.url) image = image.url;
+        if (!image && item.enclosure && item.enclosure.link) image = item.enclosure.link;
+        return price > 0 ? {
+          title: (item.title||q).replace(/&amp;/g,'&').replace(/&quot;/g,'"').trim(),
+          price: price, store: store, url: item.link, image: image
+        } : null;
       }).filter(Boolean);
 
       if (!items.length) { renderErroresFallback(q); return; }
@@ -424,9 +431,9 @@ function buscarErrores(q){
 
       var h = '<div class="ibar ok">✅ Análisis de '+items.length+' resultados para "'+esc(q)+'"</div>';
       h += '<div class="card" style="font-size:12px;color:var(--t2);line-height:1.9">'
-        +'<div>Precio mínimo encontrado: <b style="color:var(--green)">'+fmt(minP)+'</b></div>'
+        +'<div>Precio más bajo: <b style="color:var(--green)">'+fmt(minP)+'</b></div>'
         +'<div>Precio mediano: <b style="color:var(--text)">'+fmt(medianP)+'</b></div>'
-        +'<div>Precio máximo: <b style="color:var(--t2)">'+fmt(maxP)+'</b></div>'
+        +'<div>Precio más alto: <b style="color:var(--t2)">'+fmt(maxP)+'</b></div>'
         +'</div>';
 
       if (errores.length) {
@@ -434,33 +441,37 @@ function buscarErrores(q){
         errores.forEach(function(item){
           var diff = Math.round((1 - item.price/medianP)*100);
           h += '<div class="card err-card">'
+            +(item.image ? '<img src="'+esc(item.image)+'" style="width:100%;height:100px;object-fit:contain;border-radius:8px;margin-bottom:8px;background:var(--bg3)" loading="lazy" onerror="this.remove()">' : '')
             +'<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">'
             +'<div style="flex:1;font-size:13px;font-weight:500;color:var(--text);padding-right:10px">'+esc(item.title||q)+'</div>'
             +'<div class="err-pct">-'+diff+'%</div>'
             +'</div>'
-            +'<div style="display:flex;align-items:center;gap:8px">'
+            +'<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">'
             +'<span class="pmain">'+fmt(item.price)+'</span>'
-            +'<span style="font-size:11px;color:var(--t3)">vs mediana '+fmt(medianP)+'</span>'
+            +'<span style="font-size:11px;color:var(--t3)">mediana '+fmt(medianP)+'</span>'
             +'<span class="bdg br">⚡ Posible error</span>'
             +'</div>'
-            +'<div style="margin-top:8px">'
-            +'<span class="chip best" onclick="goUrl(\''+esc(item.url||amazonUrl)+'\')">Ver en '+esc(item.store||'tienda')+' →</span>'
-            +'</div></div>';
+            +'<div style="font-size:11px;color:var(--t3);margin-top:4px">📍 '+esc(item.store||'Tienda')+'</div>'
+            +'</div>';
         });
       } else {
         h += '<div class="card" style="text-align:center;padding:20px">'
-          +'<div style="font-size:24px;margin-bottom:8px">✅</div>'
+          +'<div style="font-size:28px;margin-bottom:8px">✅</div>'
           +'<div style="font-weight:600;color:var(--text)">Sin errores detectados</div>'
           +'<div style="font-size:12px;color:var(--t3);margin-top:4px">Los precios están dentro del rango normal</div>'
           +'</div>';
       }
 
       h += '<div class="sec" style="margin-top:6px">Todos los resultados</div>';
-      items.slice(0,12).forEach(function(item,i){
+      items.slice(0,15).forEach(function(item,i){
         var isLow = item.price < medianP * 0.65;
-        h += '<div class="card" style="'+(isLow?'border-color:rgba(239,68,68,.3)':'')+'">'
+        h += '<div class="card'+(isLow?' err-card':'')+'">'
           +'<div class="prod">'
-          +'<div class="pimg">📦</div>'
+          +'<div class="pimg">'
+          +(item.image
+            ? '<img src="'+esc(item.image)+'" onerror="this.parentElement.innerHTML=\'📦\'" loading="lazy">'
+            : '📦')
+          +'</div>'
           +'<div class="pinfo">'
           +'<div class="ptitle">'+esc(item.title||q)+'</div>'
           +'<div class="prow">'
@@ -468,7 +479,7 @@ function buscarErrores(q){
           +(i===0?'<span class="bdg bv">🏆 Más barato</span>':'')
           +(isLow?'<span class="bdg br">⚡ Posible error</span>':'')
           +'</div>'
-          +'<div><span class="chip best" onclick="goUrl(\''+esc(item.url||amazonUrl)+'\')">Ver en '+esc(item.store||'tienda')+' →</span></div>'
+          +'<div style="font-size:11px;color:var(--t3)">📍 '+esc(item.store||'Tienda')+'</div>'
           +'</div></div></div>';
       });
 
@@ -483,116 +494,119 @@ function buscarErrores(q){
 }
 
 function renderErroresFallback(q){
-  var enc = encodeURIComponent(q);
   setHTML('erroresBody',
-    '<div class="ibar">⚠️ No se pudo obtener datos de precio. Comprueba manualmente:</div>'
-    + sCard('CamelCamelCamel 📊 (historial Amazon)',
-        'Historial de precios de Amazon',
-        'https://es.camelcamelcamel.com/search?sq='+enc)
-    + sCard('Google Shopping 🔎',
-        'Compara precios actuales',
-        'https://www.google.es/search?q='+enc+'&tbm=shop')
-    + sCard('Keepa 📈 (historial precios)',
-        'Gráficas de evolución de precio',
-        'https://keepa.com/#!search/3/'+enc)
-  );
+    '<div class="ibar">⚠️ No se pudo analizar precios para "'+esc(q)+'". Inténtalo de nuevo.</div>'
+    +'<button class="rel-btn" id="errRetry" style="margin-top:8px">🔄 Reintentar</button>');
+  var rb = $('errRetry');
+  if (rb) rb.addEventListener('click', function(){ buscarErrores(q); });
 }
 
 // ─── CHOLLOS ─────────────────────────────────────────────────────────────────
-var CH_FEEDS = {
-  hot      : 'https://www.chollometro.com/rss',
-  fresh    : 'https://www.chollometro.com/nuevos/rss',
-  commented: 'https://www.chollometro.com/comentados/rss'
-};
+// Two completely independent data sources — switching tabs fetches different data
 var RSS2J = 'https://api.rss2json.com/v1/api.json?rss_url=';
 
-// Wire chollos sub-tabs — done here at load time, #ctabsWrap is always in DOM
+var CH_SOURCES = {
+  chollometro: 'https://www.chollometro.com/rss',
+  chollero   : 'https://chollero.es/feed/'
+};
+
+// Cache per source so switching tabs doesn't re-fetch unnecessarily
+var CH_CACHE = { chollometro: null, chollero: null };
+var CH_LOADING = false;
+
+// Wire the 2 sub-tabs from JS — straightforward, no trickery
 document.querySelectorAll('#ctabsWrap .ctab').forEach(function(btn){
   btn.addEventListener('click', function(){
     var tab = btn.getAttribute('data-ctab');
-    // Update active button state
+    // Highlight clicked tab
     document.querySelectorAll('#ctabsWrap .ctab').forEach(function(b){
       b.classList.toggle('on', b.getAttribute('data-ctab') === tab);
     });
-    // Switch tab
+    // Update state and load
     ACTIVE_CTAB = tab;
-    // If data loaded, re-render with new tab immediately
-    // If still loading, just update ACTIVE_CTAB — renderChollos will use it
-    if (CH_DATA) {
-      renderChollosTab();
-    }
-    // If not loaded yet, loadChollos will be called by switchTab('chollos')
+    loadOrShowTab(tab);
   });
 });
 
+// Called when chollos panel becomes visible, and when tabs are clicked
 function loadChollos(){
-  if (CH_LOADING) return;
-  CH_LOADING = true;
-  setHTML('chollosBody', loader('Cargando chollos de Chollometro…'));
-
-  // Fetch all 3 feeds in parallel
-  var keys   = ['hot','fresh','commented'];
-  var promises = keys.map(function(key){
-    var url = RSS2J + encodeURIComponent(CH_FEEDS[key]);
-    return fetch(url)
-      .then(function(r){ return r.ok ? r.json() : Promise.reject('fail-'+key); })
-      .then(function(d){ return { key: key, items: parseChollosItems(d.items || []) }; })
-      .catch(function(){ return { key: key, items: [] }; });
-  });
-
-  Promise.all(promises).then(function(results){
-    CH_DATA = {};
-    results.forEach(function(r){ CH_DATA[r.key] = r.items; });
-    CH_LOADING = false;
-
-    // Fill empty tabs by re-sorting the hot feed
-    if (CH_DATA.hot.length === 0) {
-      CH_DATA.hot = DEMO_CHOLLOS();
-    }
-    if (CH_DATA.fresh.length === 0) {
-      CH_DATA.fresh = CH_DATA.hot.slice().sort(function(a,b){
-        return new Date(b.pubDate||0) - new Date(a.pubDate||0);
-      });
-    }
-    if (CH_DATA.commented.length === 0) {
-      CH_DATA.commented = CH_DATA.hot.slice().sort(function(a,b){
-        return (b.comments||0) - (a.comments||0);
-      });
-    }
-
-    renderChollosTab();
-  });
+  ACTIVE_CTAB = 'chollometro'; // always start on first tab
+  loadOrShowTab('chollometro');
 }
 
-function parseChollosItems(items){
-  return items.map(function(item){
-    var title = (item.title || '').replace(/\s*\|\s*Chollometro.*/i,'').replace(/\s*\(\d+°\)/,'').trim();
-    if (!title) return null;
-    var desc  = item.description || item.content || '';
-    var all   = title + ' ' + desc;
+function loadOrShowTab(tab){
+  // If already cached, show immediately
+  if (CH_CACHE[tab]) {
+    renderChollosItems(CH_CACHE[tab], tab);
+    return;
+  }
+  // Otherwise fetch
+  setHTML('chollosBody', loader('Cargando '+tab+'…'));
+  CH_LOADING = true;
 
+  var feedUrl = CH_SOURCES[tab];
+  fetch(RSS2J + encodeURIComponent(feedUrl))
+    .then(function(r){ return r.ok ? r.json() : Promise.reject('http-'+r.status); })
+    .then(function(data){
+      if (!data || data.status === 'error') throw new Error('rss-error: '+data.message);
+      var items = parseChollosItems(data.items || [], tab);
+      CH_CACHE[tab] = items.length ? items : DEMO_CHOLLOS(tab);
+      CH_LOADING = false;
+      renderChollosItems(CH_CACHE[tab], tab);
+    })
+    .catch(function(err){
+      console.warn('Chollos fetch error ('+tab+'):', err);
+      CH_LOADING = false;
+      CH_CACHE[tab] = DEMO_CHOLLOS(tab);
+      renderChollosItems(CH_CACHE[tab], tab);
+    });
+}
+
+function parseChollosItems(items, source){
+  return items.map(function(item){
+    // Clean title
+    var title = (item.title || '')
+      .replace(/\s*\|\s*(Chollometro|Chollero).*/i, '')
+      .replace(/\s*\(\d+°\)/, '')
+      .replace(/&amp;/g,'&').replace(/&quot;/g,'"').trim();
+    if (!title) return null;
+
+    var desc = item.description || item.content || '';
+    var all  = title + ' ' + desc;
+
+    // Votes/temperature (Chollometro specific)
     var tempM = all.match(/(\d+)\s*°/);
     var votes = tempM ? parseInt(tempM[1]) : 0;
 
-    var commM    = desc.match(/(\d+)\s*(?:comentarios?|comments?)/i);
+    // Comments
+    var commM = desc.match(/(\d+)\s*(?:comentarios?|comments?)/i);
     var comments = commM ? parseInt(commM[1]) : 0;
 
+    // Price — look for euro amounts
     var prM   = all.match(/([\d]+(?:[.,][\d]{2})?)\s*€/) || all.match(/€\s*([\d]+(?:[.,][\d]{2})?)/);
     var price = prM ? pPrice(prM[1]) : null;
+    if (price && price > 50000) price = null; // sanity check
 
-    var pvM       = desc.match(/~~([\d,.]+)\s*€~~/) || desc.match(/antes[:\s]*([\d,.]+)\s*€/i);
+    // Previous price
+    var pvM       = desc.match(/~~([\d,.]+)\s*€~~/) || desc.match(/antes[:\s]*([\d,.]+)\s*€/i) || desc.match(/precio\s+anterior[:\s]*([\d,.]+)\s*€/i);
     var prevPrice = pvM ? pPrice(pvM[1]) : null;
     if (prevPrice && price && prevPrice <= price) prevPrice = null;
 
-    var imgM  = desc.match(/<img[^>]+src=["']([^"']+)["']/i);
-    var image = imgM ? imgM[1] : (item.thumbnail || null);
+    // Image — prefer thumbnail from rss2json, then first img tag in description
+    var image = item.thumbnail || null;
+    if (!image) {
+      var imgM = desc.match(/<img[^>]+src=["']([^"']+)["']/i);
+      if (imgM) image = imgM[1];
+    }
+    // Skip tiny tracking pixels
+    if (image && (image.includes('pixel') || image.includes('track') || image.length < 10)) image = null;
 
     var cats     = item.categories || [];
-    var category = cats.length ? cats[0] : 'General';
+    var category = cats[0] || 'General';
 
     return {
       title    : title,
-      link     : item.link || 'https://www.chollometro.com',
+      link     : item.link || CH_SOURCES[source],
       price    : price,
       prevPrice: prevPrice,
       votes    : votes,
@@ -600,33 +614,35 @@ function parseChollosItems(items){
       category : category,
       image    : image,
       pubDate  : item.pubDate,
-      timeAgo  : item.pubDate ? relTime(new Date(item.pubDate)) : 'reciente'
+      timeAgo  : item.pubDate ? relTime(new Date(item.pubDate)) : 'reciente',
+      source   : source
     };
   }).filter(Boolean);
 }
 
-function renderChollosTab(){
-  // Always use ACTIVE_CTAB to pick the right list
-  var items = (CH_DATA && CH_DATA[ACTIVE_CTAB]) ? CH_DATA[ACTIVE_CTAB] : [];
-  if (!items.length) items = DEMO_CHOLLOS();
-  renderChollosItems(items);
-}
-
-function renderChollosItems(items){
+function renderChollosItems(items, tab){
   var hot = items.filter(function(c){ return c.votes >= 200; });
-  var h   = hot.length ? '<div class="ibar">🔥 '+hot.length+' chollos con más de 200° ahora mismo</div>' : '';
+  var src = tab === 'chollometro' ? 'Chollometro' : 'Chollero.es';
+  var h = '';
+
+  if (hot.length) {
+    h += '<div class="ibar">🔥 '+hot.length+' chollos con más de 200° en '+src+'</div>';
+  }
 
   items.slice(0, 25).forEach(function(c){
     var disc = (c.price && c.prevPrice) ? Math.round((1 - c.price/c.prevPrice)*100) : 0;
     h += '<div class="card">'
       + (c.votes >= 300 ? '<div class="hotbdg">🔥 HOT</div>' : '')
-      + (c.image ? '<img src="'+esc(c.image)+'" style="width:100%;height:80px;object-fit:cover;border-radius:8px;margin-bottom:8px" loading="lazy" onerror="this.remove()">' : '')
+      // Image
+      + (c.image
+          ? '<img src="'+esc(c.image)+'" style="width:100%;height:90px;object-fit:cover;border-radius:8px;margin-bottom:8px" loading="lazy" onerror="this.remove()">'
+          : '')
       + '<div class="chttl">'+esc(c.title)+'</div>'
       + '<div class="chmeta">'
-      + (c.price    ? '<span class="chprc">'+fmt(c.price)+'</span>' : '')
-      + (c.prevPrice? '<span class="chold">'+fmt(c.prevPrice)+'</span>' : '')
-      + (disc       ? '<span class="bdg br">-'+disc+'%</span>' : '')
-      + '<span class="chvotes">🌡️ '+c.votes+'°</span>'
+      + (c.price     ? '<span class="chprc">'+fmt(c.price)+'</span>' : '')
+      + (c.prevPrice ? '<span class="chold">'+fmt(c.prevPrice)+'</span>' : '')
+      + (disc        ? '<span class="bdg br">-'+disc+'%</span>' : '')
+      + (c.votes     ? '<span class="chvotes">🌡️ '+c.votes+'°</span>' : '')
       + '</div>'
       + '<div class="chfoot">'
       + '🕐 '+esc(c.timeAgo)+' · '+esc(c.category)
@@ -635,15 +651,14 @@ function renderChollosItems(items){
       + '</div></div>';
   });
 
-  h += '<button class="rel-btn" id="chReload">🔄 Actualizar chollos</button>';
+  h += '<button class="rel-btn" id="chReload">🔄 Actualizar '+esc(src)+'</button>';
+  h += '<div class="cap">Fuente: '+esc(src)+'</div>';
   setHTML('chollosBody', h);
 
   var rb = $('chReload');
   if (rb) rb.addEventListener('click', function(){
-    CH_DATA    = null;
-    CH_LOADING = false;
-    setHTML('chollosBody', loader('Actualizando…'));
-    loadChollos();
+    CH_CACHE[tab] = null; // clear cache for this tab only
+    loadOrShowTab(tab);
   });
 }
 
@@ -655,14 +670,15 @@ function relTime(d){
   return 'hace '+Math.floor(s/86400)+'d';
 }
 
-function DEMO_CHOLLOS(){
+function DEMO_CHOLLOS(tab){
+  var link = tab === 'chollero' ? 'https://chollero.es' : 'https://www.chollometro.com';
   return [
-    {title:'Xiaomi Redmi Note 13 Pro 256GB', price:199,prevPrice:329,votes:847,timeAgo:'hace 12 min',category:'Móviles', comments:43,link:'https://www.chollometro.com'},
-    {title:'AirPods Pro 2 — precio mínimo',  price:189,prevPrice:279,votes:623,timeAgo:'hace 34 min',category:'Audio',   comments:31,link:'https://www.chollometro.com'},
-    {title:'Dyson V15 Detect',               price:399,prevPrice:649,votes:512,timeAgo:'hace 1h',    category:'Hogar',   comments:27,link:'https://www.chollometro.com'},
-    {title:'SSD Samsung 990 Pro 2TB',        price:89, prevPrice:149,votes:401,timeAgo:'hace 2h',    category:'PC',      comments:19,link:'https://www.chollometro.com'},
-    {title:'Nintendo Switch OLED + Mario',   price:299,prevPrice:349,votes:387,timeAgo:'hace 3h',    category:'Gaming',  comments:55,link:'https://www.chollometro.com'},
-    {title:'Sony WH-1000XM5 ANC',            price:249,prevPrice:399,votes:334,timeAgo:'hace 4h',    category:'Audio',   comments:22,link:'https://www.chollometro.com'},
+    {title:'Xiaomi Redmi Note 13 Pro 256GB', price:199,prevPrice:329,votes:847,timeAgo:'hace 12 min',category:'Móviles', comments:43,link:link,image:null},
+    {title:'AirPods Pro 2 — precio mínimo',  price:189,prevPrice:279,votes:623,timeAgo:'hace 34 min',category:'Audio',   comments:31,link:link,image:null},
+    {title:'Dyson V15 Detect',               price:399,prevPrice:649,votes:512,timeAgo:'hace 1h',    category:'Hogar',   comments:27,link:link,image:null},
+    {title:'SSD Samsung 990 Pro 2TB',        price:89, prevPrice:149,votes:401,timeAgo:'hace 2h',    category:'PC',      comments:19,link:link,image:null},
+    {title:'Nintendo Switch OLED + Mario',   price:299,prevPrice:349,votes:387,timeAgo:'hace 3h',    category:'Gaming',  comments:55,link:link,image:null},
+    {title:'Sony WH-1000XM5 ANC',            price:249,prevPrice:399,votes:334,timeAgo:'hace 4h',    category:'Audio',   comments:22,link:link,image:null},
   ];
 }
 
