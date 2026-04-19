@@ -6,152 +6,139 @@
 <meta name="theme-color" content="#0d0d1a">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="PriceHunter">
+<meta name="apple-mobile-web-app-title" content="Chollos">
 <meta name="mobile-web-app-capable" content="yes">
-<title>PriceHunter</title>
+<title>Chollos</title>
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon-192.png">
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 :root{
-  --bg:#0d0d1a;--bg3:#1a1a2e;--card:#161625;--card2:#1e1e35;
+  --bg:#0d0d1a;--bg2:#13131f;--bg3:#1a1a2e;
+  --card:#161625;--card2:#1e1e35;
   --accent:#7c6ff7;--green:#22c55e;--red:#ef4444;--amber:#f59e0b;
   --text:#f0f0ff;--t2:#9090b8;--t3:#5a5a80;
-  --b1:rgba(255,255,255,.07);--b2:rgba(255,255,255,.13);--r:14px
+  --b1:rgba(255,255,255,.07);--b2:rgba(255,255,255,.13);
+  --r:14px;--rs:8px
 }
 html,body{height:100%;background:var(--bg);color:var(--text);
   font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
   font-size:14px;overscroll-behavior:none;-webkit-font-smoothing:antialiased}
 #app{max-width:480px;margin:0 auto;height:100dvh;height:100vh;
   display:flex;flex-direction:column;overflow:hidden}
-/* HEADER */
-.hdr{background:var(--bg3);padding:12px 16px 0;border-bottom:1px solid var(--b1);flex-shrink:0}
-.hdr-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
-.logo{font-size:18px;font-weight:700;letter-spacing:-.3px}
+
+/* ── HEADER ── */
+.hdr{background:var(--bg3);padding:12px 16px 0;
+  border-bottom:1px solid var(--b1);flex-shrink:0}
+.hdr-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.logo{font-size:19px;font-weight:700;letter-spacing:-.3px}
 .logo b{color:var(--accent)}
-.notif-btn{width:36px;height:36px;background:var(--card2);border:1px solid var(--b2);
-  border-radius:10px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center}
-/* SEARCH BAR */
-.srch{display:flex;gap:8px;margin-bottom:12px}
-.srch input{flex:1;height:44px;background:var(--card);border:1px solid var(--b2);
-  border-radius:var(--r);padding:0 14px;color:var(--text);font-size:14px;outline:none}
-.srch input:focus{border-color:var(--accent)}
-.srch input::placeholder{color:var(--t3)}
-.srch button{height:44px;padding:0 18px;background:var(--accent);border:none;
-  border-radius:var(--r);color:#fff;font-size:14px;font-weight:600;cursor:pointer}
-.srch button:disabled{opacity:.5}
-/* TABS */
-.tabs{display:flex}
-.tabs button{flex:1;padding:9px 2px;background:none;border:none;
-  border-bottom:2px solid transparent;color:var(--t3);font-size:11px;font-weight:600;cursor:pointer}
-.tabs button.on{color:var(--accent);border-bottom-color:var(--accent)}
-/* SCROLL + PANELS */
-.scroll{flex:1;overflow-y:auto;padding:14px;scrollbar-width:none}
+.hdr-icons{display:flex;gap:8px}
+.icon-btn{width:36px;height:36px;background:var(--card2);border:1px solid var(--b2);
+  border-radius:var(--rs);font-size:15px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;position:relative}
+.badge{position:absolute;top:-4px;right:-4px;min-width:16px;height:16px;
+  background:var(--red);border-radius:8px;font-size:9px;font-weight:700;
+  color:#fff;display:flex;align-items:center;justify-content:center;
+  padding:0 3px;border:2px solid var(--bg3)}
+
+/* ── SOURCES ── */
+.sources{display:flex;gap:6px;margin-bottom:10px}
+.src-btn{flex:1;padding:7px 4px;background:var(--card2);border:1px solid var(--b2);
+  border-radius:var(--rs);color:var(--t2);font-size:12px;font-weight:600;
+  cursor:pointer;text-align:center;transition:all .15s}
+.src-btn.on{background:rgba(124,111,247,.2);border-color:var(--accent);color:var(--accent)}
+
+/* ── FILTERS ── */
+.filters{display:flex;gap:6px;overflow-x:auto;padding-bottom:10px;scrollbar-width:none}
+.filters::-webkit-scrollbar{display:none}
+.f-chip{flex-shrink:0;padding:5px 11px;background:var(--card2);border:1px solid var(--b2);
+  border-radius:20px;color:var(--t2);font-size:11px;font-weight:600;cursor:pointer;
+  white-space:nowrap;transition:all .15s}
+.f-chip.on{background:rgba(124,111,247,.15);border-color:var(--accent);color:var(--accent)}
+
+/* ── SCROLL ── */
+.scroll{flex:1;overflow-y:auto;padding:10px 12px;scrollbar-width:none}
 .scroll::-webkit-scrollbar{display:none}
+
+/* ── PANELS ── */
 .pnl{display:none}.pnl.on{display:block}
-/* CARDS */
-.card{background:var(--card);border:1px solid var(--b1);border-radius:var(--r);
-  padding:12px;margin-bottom:10px;position:relative}
-.sec{font-size:11px;font-weight:700;color:var(--t3);letter-spacing:.8px;
-  text-transform:uppercase;margin:4px 0 10px}
-/* PRODUCT */
-.prod{display:flex;gap:12px;align-items:flex-start}
-.pimg{width:60px;height:60px;background:var(--bg3);border-radius:10px;flex-shrink:0;
-  display:flex;align-items:center;justify-content:center;font-size:26px;overflow:hidden}
-.pimg img{width:100%;height:100%;object-fit:cover}
-.pinfo{flex:1;min-width:0}
-.ptitle{font-size:13px;font-weight:500;color:var(--text);margin-bottom:5px;
-  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-.prow{display:flex;align-items:center;flex-wrap:wrap;gap:5px;margin-bottom:6px}
-.pmain{font-size:17px;font-weight:700;color:var(--green)}
-.pold{font-size:12px;color:var(--t3);text-decoration:line-through}
-.bdg{font-size:10px;font-weight:700;padding:2px 6px;border-radius:4px}
-.br{background:rgba(239,68,68,.15);color:var(--red)}
-.bv{background:rgba(124,111,247,.2);color:var(--accent)}
-.bg2{background:rgba(34,197,94,.15);color:var(--green)}
-.chip{font-size:10px;padding:3px 8px;border-radius:20px;background:var(--card2);
-  color:var(--t2);border:1px solid var(--b1);cursor:pointer}
-.chip.best{background:rgba(34,197,94,.1);color:var(--green);border-color:rgba(34,197,94,.3)}
-/* CHOLLOS SUB-TABS */
-.ctabs{display:flex;gap:6px;margin-bottom:12px}
-.ctab{flex:1;padding:8px 4px;background:var(--card2);border:1px solid var(--b2);
-  border-radius:8px;color:var(--t2);font-size:11px;font-weight:600;cursor:pointer;text-align:center}
-.ctab.on{background:rgba(124,111,247,.2);border-color:rgba(124,111,247,.4);color:var(--accent)}
-/* CHOLLO CARD */
-.chttl{font-size:13px;font-weight:500;color:var(--text);margin-bottom:8px;padding-right:52px}
-.chmeta{display:flex;align-items:center;flex-wrap:wrap;gap:7px}
-.chprc{font-size:15px;font-weight:700;color:var(--green)}
-.chold{font-size:11px;color:var(--t3);text-decoration:line-through}
-.chvotes{margin-left:auto;font-size:13px;font-weight:700;color:var(--red)}
-.chfoot{display:flex;align-items:center;gap:6px;margin-top:7px;font-size:11px;color:var(--t3)}
-.chlnk{margin-left:auto;font-size:11px;color:var(--accent);text-decoration:none}
-.hotbdg{position:absolute;top:10px;right:10px;
+
+/* ── DEAL CARD ── */
+.deal{background:var(--card);border:1px solid var(--b1);border-radius:var(--r);
+  margin-bottom:8px;overflow:hidden;cursor:pointer;transition:border-color .15s;
+  position:relative}
+.deal:active{border-color:var(--b2)}
+.deal.seen{opacity:.55}
+.deal-img{width:100%;height:130px;object-fit:cover;display:block;background:var(--bg3)}
+.deal-img.thumb{height:100px;object-fit:contain;padding:8px;background:var(--bg3)}
+.deal-body{padding:10px 12px}
+.deal-store{font-size:10px;font-weight:700;color:var(--accent);text-transform:uppercase;
+  letter-spacing:.5px;margin-bottom:4px}
+.deal-title{font-size:13px;font-weight:500;color:var(--text);line-height:1.4;
+  margin-bottom:8px;display:-webkit-box;-webkit-line-clamp:2;
+  -webkit-box-orient:vertical;overflow:hidden}
+.deal-meta{display:flex;align-items:center;flex-wrap:wrap;gap:6px}
+.deal-price{font-size:18px;font-weight:700;color:var(--green)}
+.deal-prev{font-size:12px;color:var(--t3);text-decoration:line-through}
+.deal-disc{font-size:11px;font-weight:700;padding:2px 6px;border-radius:4px;
+  background:rgba(239,68,68,.15);color:var(--red)}
+.deal-votes{margin-left:auto;display:flex;align-items:center;gap:3px;
+  font-size:13px;font-weight:700;color:var(--red)}
+.deal-foot{display:flex;align-items:center;gap:6px;padding:6px 12px 10px;
+  font-size:11px;color:var(--t3);border-top:1px solid var(--b1)}
+.deal-cat{background:var(--card2);padding:2px 7px;border-radius:10px;font-size:10px}
+.deal-time{margin-left:auto}
+.hot-badge{position:absolute;top:8px;left:8px;
   background:linear-gradient(135deg,#ef4444,#f97316);color:#fff;
-  font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px}
-/* ALERTS */
-.alrow{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--b1)}
-.alrow:last-child{border-bottom:none}
-.aldot{width:8px;height:8px;border-radius:50%;background:var(--accent);flex-shrink:0}
-.aldot.off{background:var(--t3)}
-.alinfo{flex:1}
-.alnm{font-size:13px;font-weight:500;color:var(--text)}
-.alsub{font-size:11px;color:var(--t3);margin-top:2px}
-.toggle{width:40px;height:22px;background:var(--card2);border:1px solid var(--b2);
-  border-radius:11px;position:relative;cursor:pointer;transition:background .2s;flex-shrink:0}
-.toggle.on{background:var(--accent);border-color:var(--accent)}
-.toggle::after{content:'';position:absolute;top:3px;left:3px;width:14px;height:14px;
-  background:#fff;border-radius:50%;transition:transform .2s}
-.toggle.on::after{transform:translateX(18px)}
-.al-form{background:var(--card2);border:1px solid var(--b2);border-radius:var(--r);
-  padding:14px;margin-bottom:10px}
-.al-form h3{font-size:14px;font-weight:600;color:var(--text);margin-bottom:12px}
-.fld{width:100%;height:40px;background:var(--bg3);border:1px solid var(--b2);
-  border-radius:10px;padding:0 12px;color:var(--text);font-size:13px;outline:none;
-  margin-bottom:8px;display:block}
-.fld:focus{border-color:var(--accent)}
-.fld::placeholder{color:var(--t3)}
-.form-btns{display:flex;gap:8px}
-.btn-save{flex:1;height:38px;background:var(--accent);border:none;border-radius:10px;
-  color:#fff;font-size:13px;font-weight:600;cursor:pointer}
-.btn-cancel{height:38px;padding:0 14px;background:var(--card);border:1px solid var(--b2);
-  border-radius:10px;color:var(--t2);font-size:13px;cursor:pointer}
-/* ERROR DE PRECIO */
-.err-card{border-left:3px solid var(--red)}
-.err-pct{font-size:22px;font-weight:700;color:var(--red)}
-/* MISC */
-.ibar{background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.25);
-  border-radius:8px;padding:8px 12px;font-size:12px;color:var(--amber);margin-bottom:12px}
-.ibar.ok{background:rgba(34,197,94,.08);border-color:rgba(34,197,94,.3);color:var(--green)}
-.ibar.info{background:rgba(124,111,247,.08);border-color:rgba(124,111,247,.3);color:var(--accent)}
-.empty{text-align:center;padding:40px 20px}
-.ei{font-size:48px;margin-bottom:12px}
-.et{font-size:16px;font-weight:600;color:var(--text);margin-bottom:6px}
-.es{font-size:13px;color:var(--t3);line-height:1.6}
-.qtags{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:18px}
-.qtag{background:var(--card2);border:1px solid var(--b2);color:var(--t2);
-  padding:6px 12px;border-radius:20px;font-size:12px;cursor:pointer}
-.add-btn{width:100%;padding:12px;background:rgba(124,111,247,.1);
-  border:1px dashed rgba(124,111,247,.4);border-radius:var(--r);
-  color:var(--accent);font-size:13px;font-weight:600;cursor:pointer}
-.rel-btn{width:100%;padding:11px;background:var(--card2);border:1px solid var(--b2);
-  border-radius:var(--r);color:var(--t2);font-size:13px;cursor:pointer;margin-top:4px}
-.lnk-card{cursor:pointer}
-.ldr{display:flex;flex-direction:column;align-items:center;gap:12px;
-  padding:50px 20px;color:var(--t3);font-size:13px}
-.spin{width:24px;height:24px;border:2px solid var(--b2);border-top-color:var(--accent);
-  border-radius:50%;animation:spin .7s linear infinite}
-@keyframes spin{to{transform:rotate(360deg)}}
-.cap{font-size:11px;color:var(--t3);text-align:center;padding:4px 0 8px}
-.del-btn{font-size:16px;cursor:pointer;color:var(--t3);background:none;border:none;padding:0 4px}
-/* BOTTOM NAV */
+  font-size:10px;font-weight:700;padding:3px 8px;border-radius:20px}
+.fav-btn{position:absolute;top:8px;right:8px;width:30px;height:30px;
+  background:rgba(0,0,0,.5);border-radius:50%;display:flex;
+  align-items:center;justify-content:center;font-size:14px;
+  backdrop-filter:blur(4px);border:none;cursor:pointer}
+
+/* ── TEMP SLIDER ── */
+.temp-wrap{display:flex;align-items:center;gap:8px;
+  padding:8px 0 10px;font-size:12px;color:var(--t2)}
+.temp-wrap input{flex:1;accent-color:var(--accent)}
+.temp-val{font-weight:700;color:var(--accent);min-width:32px;text-align:right}
+
+/* ── FAVORITES / HISTORY PANEL ── */
+.panel-title{font-size:12px;font-weight:700;color:var(--t3);
+  letter-spacing:.8px;text-transform:uppercase;margin:4px 0 10px}
+.empty-state{text-align:center;padding:48px 20px}
+.empty-icon{font-size:44px;margin-bottom:10px}
+.empty-title{font-size:15px;font-weight:600;color:var(--text);margin-bottom:5px}
+.empty-sub{font-size:12px;color:var(--t3);line-height:1.6}
+
+/* ── BOTTOM NAV ── */
 .bnav{display:flex;background:var(--bg3);border-top:1px solid var(--b1);
   padding:8px 0;padding-bottom:max(8px,env(safe-area-inset-bottom));flex-shrink:0}
 .bnav button{flex:1;display:flex;flex-direction:column;align-items:center;
-  gap:3px;background:none;border:none;cursor:pointer;padding:4px 0}
+  gap:3px;background:none;border:none;cursor:pointer;padding:4px 0;position:relative}
 .bnav .bi{font-size:20px}
 .bnav .bl{font-size:10px;color:var(--t3)}
 .bnav button.on .bl{color:var(--accent)}
-/* TOAST */
+
+/* ── MISC ── */
+.ldr{display:flex;flex-direction:column;align-items:center;
+  gap:12px;padding:50px 20px;color:var(--t3);font-size:13px}
+.spin{width:24px;height:24px;border:2px solid var(--b2);
+  border-top-color:var(--accent);border-radius:50%;
+  animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.rel-btn{width:100%;padding:11px;background:var(--card2);
+  border:1px solid var(--b2);border-radius:var(--r);
+  color:var(--t2);font-size:13px;cursor:pointer;margin-top:4px}
+.clear-btn{width:100%;padding:10px;background:rgba(239,68,68,.1);
+  border:1px solid rgba(239,68,68,.3);border-radius:var(--r);
+  color:var(--red);font-size:13px;cursor:pointer;margin-top:8px}
+.cap{font-size:10px;color:var(--t3);text-align:center;padding:4px 0 8px}
+.ibar{background:rgba(124,111,247,.08);border:1px solid rgba(124,111,247,.25);
+  border-radius:var(--rs);padding:8px 12px;font-size:12px;
+  color:var(--accent);margin-bottom:10px}
+
+/* ── TOAST ── */
 #toast{position:fixed;bottom:88px;left:50%;
   transform:translateX(-50%) translateY(12px);
   background:var(--card2);border:1px solid var(--b2);color:var(--text);
@@ -167,678 +154,580 @@ html,body{height:100%;background:var(--bg);color:var(--text);
   <!-- HEADER -->
   <div class="hdr">
     <div class="hdr-top">
-      <div class="logo">🎯 Price<b>Hunter</b></div>
-      <button class="notif-btn" id="notifBtn">🔔</button>
+      <div class="logo">🔥 Choll<b>os</b></div>
+      <div class="hdr-icons">
+        <button class="icon-btn" id="notifBtn" title="Notificaciones">🔔</button>
+        <button class="icon-btn" id="historyBtn" title="Vistos">🕐</button>
+        <button class="icon-btn" id="favsBtn" title="Favoritos">
+          ⭐
+          <span class="badge" id="favsBadge" style="display:none">0</span>
+        </button>
+      </div>
     </div>
-    <div class="srch">
-      <input id="q" type="search" placeholder="Busca un producto…"
-             autocomplete="off" autocorrect="off" spellcheck="false">
-      <button id="searchBtn">Buscar</button>
+
+    <!-- SOURCE SELECTOR -->
+    <div class="sources" id="sourceBtns">
+      <button class="src-btn on" data-src="chollometro">🇪🇸 Chollometro</button>
+      <button class="src-btn"    data-src="dealabs">🌍 Dealabs</button>
     </div>
-    <div class="tabs" id="mainTabs">
-      <button data-tab="search"  class="on">🔍 Buscar</button>
-      <button data-tab="errores">⚡ Errores</button>
-      <button data-tab="chollos">🔥 Chollos</button>
-      <button data-tab="alerts" >🔔 Alertas</button>
+
+    <!-- CATEGORY FILTERS -->
+    <div class="filters" id="catFilters">
+      <span class="f-chip on" data-cat="">Todos</span>
+      <span class="f-chip" data-cat="Electrónica">📱 Electrónica</span>
+      <span class="f-chip" data-cat="Gaming">🎮 Gaming</span>
+      <span class="f-chip" data-cat="Hogar">🏠 Hogar</span>
+      <span class="f-chip" data-cat="Moda">👗 Moda</span>
+      <span class="f-chip" data-cat="Alimentación">🍕 Alimentación</span>
+      <span class="f-chip" data-cat="Viajes">✈️ Viajes</span>
+      <span class="f-chip" data-cat="Deporte">⚽ Deporte</span>
+    </div>
+
+    <!-- TEMP FILTER -->
+    <div class="temp-wrap">
+      <span>🌡️ Mín.</span>
+      <input type="range" id="tempSlider" min="0" max="500" step="50" value="0">
+      <span class="temp-val" id="tempVal">0°</span>
     </div>
   </div>
 
-  <!-- PANELS -->
+  <!-- CONTENT -->
   <div class="scroll">
 
-    <!-- BUSCAR -->
-    <div id="pnl-search" class="pnl on">
-      <div id="searchBody">
-        <div class="empty">
-          <div class="ei">🎯</div>
-          <div class="et">Busca el precio más barato</div>
-          <div class="es">Toca una tienda para ver los precios de ese producto directamente.</div>
-          <div class="qtags" id="quickTags"></div>
-        </div>
-      </div>
-    </div>
-
-    <!-- ERRORES DE PRECIO -->
-    <div id="pnl-errores" class="pnl">
-      <div id="erroresBody">
-        <div class="ibar info">⚡ Introduce un producto para detectar posibles errores de precio en Amazon comparado con el precio habitual.</div>
-        <div class="empty">
-          <div class="ei">🔎</div>
-          <div class="et">Detector de errores de precio</div>
-          <div class="es">Busca un producto y analizamos si el precio actual en Amazon es anormalmente bajo respecto a su precio histórico.</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- CHOLLOS -->
-    <div id="pnl-chollos" class="pnl">
-      <div class="ctabs" id="ctabsWrap">
-        <button class="ctab on" data-ctab="chollometro">🔥 Chollometro</button>
-        <button class="ctab"    data-ctab="chollero"   >⚡ Chollero.es</button>
-      </div>
-      <div id="chollosBody">
+    <!-- DEALS PANEL -->
+    <div id="pnl-deals" class="pnl on">
+      <div id="newBar" style="display:none" class="ibar"></div>
+      <div id="dealsBody">
         <div class="ldr"><div class="spin"></div><span>Cargando chollos…</span></div>
       </div>
     </div>
 
-    <!-- ALERTAS -->
-    <div id="pnl-alerts" class="pnl">
-      <div id="alertsBody"></div>
+    <!-- FAVORITES PANEL -->
+    <div id="pnl-favs" class="pnl">
+      <div id="favsBody"></div>
     </div>
 
-  </div><!-- end scroll -->
+    <!-- HISTORY PANEL -->
+    <div id="pnl-history" class="pnl">
+      <div id="historyBody"></div>
+    </div>
+
+  </div>
 
   <!-- BOTTOM NAV -->
   <div class="bnav" id="bnav">
-    <button data-tab="search"  class="on"><span class="bi">🔍</span><span class="bl">Buscar</span></button>
-    <button data-tab="errores"          ><span class="bi">⚡</span><span class="bl">Errores</span></button>
-    <button data-tab="chollos"          ><span class="bi">🔥</span><span class="bl">Chollos</span></button>
-    <button data-tab="alerts"           ><span class="bi">🔔</span><span class="bl">Alertas</span></button>
+    <button data-tab="deals" class="on"><span class="bi">🔥</span><span class="bl">Chollos</span></button>
+    <button data-tab="favs"        ><span class="bi">⭐</span><span class="bl">Favoritos</span></button>
+    <button data-tab="history"     ><span class="bi">🕐</span><span class="bl">Vistos</span></button>
   </div>
-
-</div><!-- end app -->
+</div>
 <div id="toast"></div>
 
 <script>
 'use strict';
 
-// ─── HELPERS ──────────────────────────────────────────────────────────────────
+// ─── HELPERS ─────────────────────────────────────────────────────────────────
 function $(id){ return document.getElementById(id); }
-function setHTML(id, h){ var el = $(id); if (el) el.innerHTML = h; }
-function esc(s){
-  return String(s == null ? '' : s)
-    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
-    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-}
-function fmt(n){
-  if (n == null || n === 0) return '';
-  return new Intl.NumberFormat('es-ES',{style:'currency',currency:'EUR'}).format(n);
-}
-function goUrl(u){ window.open(u,'_blank','noopener'); }
-function extractDomain(url){ try{ return new URL(url).hostname.replace('www.',''); }catch(e){ return ''; } }
+function setHTML(id,h){ var e=$(id); if(e) e.innerHTML=h; }
+function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function fmt(n){ return n?new Intl.NumberFormat('es-ES',{style:'currency',currency:'EUR'}).format(n):''; }
 function loader(m){ return '<div class="ldr"><div class="spin"></div><span>'+esc(m)+'</span></div>'; }
-function toast(msg){
-  var el = $('toast');
-  el.textContent = msg;
-  el.classList.add('show');
-  clearTimeout(el._t);
-  el._t = setTimeout(function(){ el.classList.remove('show'); }, 3000);
+function toast(msg,dur){
+  var e=$('toast'); e.textContent=msg; e.classList.add('show');
+  clearTimeout(e._t); e._t=setTimeout(function(){ e.classList.remove('show'); },dur||2800);
 }
 function pPrice(s){
-  if (!s) return 0;
-  var c = String(s).replace(/[^0-9.,]/g,'');
-  if (!c) return 0;
-  if (/,\d{2}$/.test(c)) return parseFloat(c.replace(/\./g,'').replace(',','.'));
-  return parseFloat(c.replace(',','')) || 0;
+  if(!s) return 0;
+  var c=String(s).replace(/[^0-9.,]/g,'');
+  if(!c) return 0;
+  if(/,\d{2}$/.test(c)) return parseFloat(c.replace(/\./g,'').replace(',','.'));
+  return parseFloat(c.replace(',',''))||0;
 }
+function relTime(d){
+  var s=Math.floor((Date.now()-d)/1000);
+  if(s<60) return 'hace '+s+'s';
+  if(s<3600) return 'hace '+Math.floor(s/60)+' min';
+  if(s<86400) return 'hace '+Math.floor(s/3600)+'h';
+  return 'hace '+Math.floor(s/86400)+'d';
+}
+function store(k,v){ try{ if(v===undefined) return JSON.parse(localStorage.getItem(k)||'null'); localStorage.setItem(k,JSON.stringify(v)); }catch(e){} }
 
 // ─── STATE ────────────────────────────────────────────────────────────────────
-var ACTIVE_TAB  = 'search';
-var ACTIVE_CTAB = 'chollometro';
-var CH_LOADING  = false;
-var SHOW_FORM   = false;
-var ALERTS      = JSON.parse(localStorage.getItem('ph_alerts') || '[]');
+var ACTIVE_TAB  = 'deals';
+var ACTIVE_SRC  = 'chollometro';
+var ACTIVE_CAT  = '';
+var MIN_TEMP    = 0;
+var ALL_DEALS   = [];        // raw fetched items for current source
+var FAVS        = store('ch_favs')  || {};   // { id: deal }
+var HISTORY     = store('ch_hist')  || {};   // { id: timestamp }
+var LAST_SEEN   = store('ch_last')  || {};   // { src: isoDate } — for new deals counter
+var CACHE       = {};        // { src: { items, fetchedAt } }
 
-// ─── MAIN TAB NAVIGATION ─────────────────────────────────────────────────────
-// Wire main tabs (header)
-document.querySelectorAll('#mainTabs button').forEach(function(btn){
-  btn.addEventListener('click', function(){ switchTab(btn.getAttribute('data-tab')); });
+var RSS2J = 'https://api.rss2json.com/v1/api.json?rss_url=';
+var FEEDS = {
+  chollometro: 'https://www.chollometro.com/rss',
+  dealabs    : 'https://www.dealabs.com/rss'
+};
+
+// ─── NAVIGATION ──────────────────────────────────────────────────────────────
+document.querySelectorAll('#bnav button').forEach(function(b){
+  b.addEventListener('click', function(){ switchTab(b.getAttribute('data-tab')); });
 });
-// Wire bottom nav
-document.querySelectorAll('#bnav button').forEach(function(btn){
-  btn.addEventListener('click', function(){ switchTab(btn.getAttribute('data-tab')); });
-});
+$('favsBtn').addEventListener('click', function(){ switchTab('favs'); });
+$('historyBtn').addEventListener('click', function(){ switchTab('history'); });
 
 function switchTab(tab){
   ACTIVE_TAB = tab;
-
-  // Update header tabs
-  document.querySelectorAll('#mainTabs button').forEach(function(b){
-    b.classList.toggle('on', b.getAttribute('data-tab') === tab);
-  });
-  // Update bottom nav
   document.querySelectorAll('#bnav button').forEach(function(b){
-    b.classList.toggle('on', b.getAttribute('data-tab') === tab);
+    b.classList.toggle('on', b.getAttribute('data-tab')===tab);
   });
-  // Show/hide panels
-  document.querySelectorAll('.pnl').forEach(function(p){
-    p.classList.toggle('on', p.id === 'pnl-' + tab);
+  ['deals','favs','history'].forEach(function(t){
+    var p=$('pnl-'+t); if(p) p.classList.toggle('on',t===tab);
   });
-
-  // Lazy load
-  if (tab === 'chollos') loadChollos();
-  if (tab === 'errores') initErrores();
-  if (tab === 'alerts')  renderAlerts();
+  if(tab==='favs')    renderFavs();
+  if(tab==='history') renderHistory();
+  if(tab==='deals')   applyFilters();
 }
 
-// ─── SEARCH (links directos) ──────────────────────────────────────────────────
-var QUICK = [
-  'Xiaomi 14T Pro','AirPods Pro 2','Samsung S25','Nintendo Switch OLED',
-  'Dyson V15','PS5 Slim','iPad 10'
-];
-
-// Build quick tags
-(function(){
-  var h = QUICK.map(function(q){
-    return '<span class="qtag" data-q="'+esc(q)+'">'+esc(q)+'</span>';
-  }).join('');
-  setHTML('quickTags', h);
-  document.querySelectorAll('#quickTags .qtag').forEach(function(t){
-    t.addEventListener('click', function(){
-      doSearch(t.getAttribute('data-q'));
+// ─── SOURCE SWITCHING ─────────────────────────────────────────────────────────
+document.querySelectorAll('#sourceBtns .src-btn').forEach(function(b){
+  b.addEventListener('click', function(){
+    var src = b.getAttribute('data-src');
+    if(src === ACTIVE_SRC) return;
+    ACTIVE_SRC = src;
+    document.querySelectorAll('#sourceBtns .src-btn').forEach(function(x){
+      x.classList.toggle('on', x.getAttribute('data-src')===src);
     });
-  });
-})();
-
-$('searchBtn').addEventListener('click', function(){ doSearch(); });
-$('q').addEventListener('keydown', function(e){ if (e.key === 'Enter') doSearch(); });
-
-function doSearch(preset){
-  if (preset) $('q').value = preset;
-  var q = $('q').value.trim();
-  if (!q) return;
-  switchTab('search');
-
-  var enc = encodeURIComponent(q);
-  var h = '<div class="ibar info">🔍 Resultados para "'+esc(q)+'" — elige la tienda para ver el precio más barato</div>'
-    + '<div class="sec">Buscar en tiendas</div>'
-    + sCard('Google Shopping 🔎', 'Compara precios de múltiples tiendas',
-        'https://www.google.es/search?q='+enc+'&tbm=shop&hl=es')
-    + sCard('Amazon España 📦', 'Entrega rápida · Prime',
-        'https://www.amazon.es/s?k='+enc+'&s=price-asc-rank')
-    + sCard('AliExpress 🛒', 'Precios bajos · Envío desde China',
-        'https://es.aliexpress.com/wholesale?SearchText='+enc+'&SortType=price_asc')
-    + sCard('eBay España 🛍️', 'Nuevos y segunda mano',
-        'https://www.ebay.es/sch/i.html?_nkw='+enc+'&_sop=15')
-    + sCard('Miravia 🏪', 'Marketplace español',
-        'https://www.miravia.es/search.htm?q='+enc)
-    + sCard('PcComponentes 🖥️', 'Tecnología y gaming',
-        'https://www.pccomponentes.com/buscar/?query='+enc)
-    + '<div class="cap">Toca cualquier tienda para ver el precio más barato</div>';
-
-  setHTML('searchBody', h);
-}
-
-function sCard(name, sub, url){
-  return '<div class="card lnk-card" onclick="goUrl(\''+esc(url)+'\')">'
-    +'<div style="display:flex;align-items:center;justify-content:space-between">'
-    +'<div><div style="font-weight:600;font-size:13px">'+esc(name)+'</div>'
-    +'<div style="font-size:11px;color:var(--t3);margin-top:2px">'+esc(sub)+'</div></div>'
-    +'<span style="color:var(--accent);font-size:13px">Ver →</span>'
-    +'</div></div>';
-}
-
-// ─── ERRORES DE PRECIO ────────────────────────────────────────────────────────
-function initErrores(){
-  var q = ($('q') && $('q').value.trim()) || '';
-  setHTML('erroresBody',
-    '<div class="ibar info">⚡ Detecta cuando un producto está a precio de error comparado con otras tiendas</div>'
-    +'<div class="srch" style="margin-bottom:14px">'
-    +'<input id="errQ" type="search" placeholder="Ej: Xiaomi 14T Pro, PS5…" value="'+esc(q)+'" autocomplete="off" '
-    +'style="flex:1;height:44px;background:var(--card);border:1px solid var(--b2);border-radius:var(--r);padding:0 14px;color:var(--text);font-size:14px;outline:none">'
-    +'<button id="errBtn" style="height:44px;padding:0 16px;background:var(--accent);border:none;border-radius:var(--r);color:#fff;font-size:14px;font-weight:600;cursor:pointer">Analizar</button>'
-    +'</div>'
-    +'<div id="errResults"><div class="empty"><div class="ei">🔎</div>'
-    +'<div class="et">Escribe un producto y pulsa Analizar</div>'
-    +'<div class="es">Comparamos precios de múltiples tiendas y detectamos si alguno está un 35%+ más barato que el resto — posible error de precio.</div>'
-    +'</div></div>'
-  );
-  var btn = $('errBtn'), inp = $('errQ');
-  if (btn) btn.addEventListener('click', function(){ var v=inp?inp.value.trim():''; if(v) buscarErrores(v); });
-  if (inp) inp.addEventListener('keydown', function(e){ if(e.key==='Enter'){ var v=inp.value.trim(); if(v) buscarErrores(v); } });
-  if (q) buscarErrores(q);
-}
-
-function buscarErrores(q){
-  setHTML('errResults', loader('Analizando precios de "'+esc(q)+'"…'));
-
-  // Use rss2json to fetch a price comparison RSS — try multiple sources
-  var RSS2J = 'https://api.rss2json.com/v1/api.json?rss_url=';
-  // Idealo has a public RSS feed per search with prices
-  var idealoRSS = 'https://www.idealo.es/precios/buscar.html?q='+encodeURIComponent(q)+'&outputType=rss';
-  // Also try Google Shopping RSS as backup
-  var shopRSS   = 'https://www.google.com/search?q='+encodeURIComponent(q)+'&tbm=shop&hl=es&gl=ES&output=rss';
-
-  // Try idealo first (has structured price data in RSS), then Google Shopping
-  fetch(RSS2J + encodeURIComponent(idealoRSS))
-    .then(function(r){ return r.ok ? r.json() : Promise.reject('idealo-fail'); })
-    .then(function(data){
-      if (!data || data.status === 'error' || !(data.items||[]).length) throw new Error('no-items');
-      return data;
-    })
-    .catch(function(){
-      // Fallback to Google Shopping RSS
-      return fetch(RSS2J + encodeURIComponent(shopRSS))
-        .then(function(r){ return r.ok ? r.json() : Promise.reject('shop-fail'); });
-    })
-    .then(function(data){
-      var rawItems = data.items || [];
-      var items = rawItems.map(function(item){
-        var desc = item.description || '';
-        var all  = (item.title||'') + ' ' + desc;
-        // Try to extract price from multiple fields
-        var raw = item['g:price'] || item.price
-          || (all.match(/([\d]+[.,][\d]{2})\s*(?:EUR|€)/) || ['',''])[1]
-          || (all.match(/€\s*([\d]+[.,][\d]{2})/) || ['',''])[1]
-          || (all.match(/([\d]+[.,][\d]{2})/) || ['',''])[1];
-        var price = pPrice(raw);
-        if (price <= 0 || price > 100000) return null;
-        var store = item['g:store'] || item.author || extractDomain(item.link) || 'Tienda';
-        var image = item['g:image_link'] || item.thumbnail || null;
-        if (image && image.url) image = image.url;
-        if (!image && item.enclosure && item.enclosure.link) image = item.enclosure.link;
-        return {
-          title: (item.title||q).replace(/&amp;/g,'&').replace(/&quot;/g,'"').replace(/<[^>]+>/g,'').trim(),
-          price: price, store: store, url: item.link||'#', image: image
-        };
-      }).filter(Boolean);
-
-      if (!items.length) { showErrFallback(q); return; }
-
-      items.sort(function(a,b){ return a.price - b.price; });
-      var prices  = items.map(function(i){ return i.price; });
-      var minP    = prices[0];
-      var maxP    = prices[prices.length-1];
-      var midIdx  = Math.floor(prices.length/2);
-      var medianP = prices[midIdx];
-      var errores = items.filter(function(i){ return i.price < medianP * 0.65; });
-
-      var h = '<div class="ibar ok">✅ '+items.length+' precios analizados para "'+esc(q)+'"</div>'
-        +'<div class="card" style="font-size:12px;color:var(--t2);line-height:2">'
-        +'<div>Más barato: <b style="color:var(--green)">'+fmt(minP)+'</b></div>'
-        +'<div>Precio mediano: <b style="color:var(--text)">'+fmt(medianP)+'</b></div>'
-        +'<div>Más caro: <b style="color:var(--t2)">'+fmt(maxP)+'</b></div>'
-        +'</div>';
-
-      if (errores.length){
-        h += '<div class="sec" style="margin-top:6px;color:var(--red)">⚡ Posibles errores de precio</div>';
-        errores.forEach(function(item){
-          var diff = Math.round((1 - item.price/medianP)*100);
-          h += '<div class="card err-card">'
-            +(item.image ? '<img src="'+esc(item.image)+'" style="width:100%;height:110px;object-fit:contain;border-radius:8px;margin-bottom:8px;background:var(--bg3)" loading="lazy" onerror="this.remove()">' : '')
-            +'<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:6px">'
-            +'<div style="flex:1;font-size:13px;font-weight:500;color:var(--text)">'+esc(item.title)+'</div>'
-            +'<div class="err-pct">-'+diff+'%</div>'
-            +'</div>'
-            +'<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">'
-            +'<span class="pmain">'+fmt(item.price)+'</span>'
-            +'<span style="font-size:11px;color:var(--t3)">vs mediana '+fmt(medianP)+'</span>'
-            +'<span class="bdg br">⚡ Posible error</span>'
-            +'</div>'
-            +'<div style="font-size:11px;color:var(--t3);margin-top:5px">📍 '+esc(item.store)+'</div>'
-            +'</div>';
-        });
-      } else {
-        h += '<div class="card" style="text-align:center;padding:20px">'
-          +'<div style="font-size:28px;margin-bottom:8px">✅</div>'
-          +'<div style="font-weight:600;color:var(--text)">Sin errores de precio detectados</div>'
-          +'<div style="font-size:12px;color:var(--t3);margin-top:4px">Los precios están dentro del rango normal</div>'
-          +'</div>';
-      }
-
-      h += '<div class="sec" style="margin-top:6px">Todos los precios encontrados</div>';
-      items.slice(0,15).forEach(function(item,i){
-        var isLow = item.price < medianP * 0.65;
-        h += '<div class="card'+(isLow?' err-card':'')+'">'
-          +'<div class="prod">'
-          +'<div class="pimg">'+(item.image ? '<img src="'+esc(item.image)+'" onerror="this.parentElement.innerHTML=\'📦\'" loading="lazy">' : '📦')+'</div>'
-          +'<div class="pinfo">'
-          +'<div class="ptitle">'+esc(item.title)+'</div>'
-          +'<div class="prow"><span class="pmain">'+fmt(item.price)+'</span>'
-          +(i===0?'<span class="bdg bv">🏆 Más barato</span>':'')
-          +(isLow?'<span class="bdg br">⚡ Error</span>':'')
-          +'</div>'
-          +'<div style="font-size:11px;color:var(--t3)">📍 '+esc(item.store)+'</div>'
-          +'</div></div></div>';
-      });
-
-      h += '<button class="rel-btn" id="errReload">🔄 Actualizar análisis</button>';
-      h += '<div class="cap">Datos de Idealo/Google Shopping · '+new Date().toLocaleTimeString('es-ES')+'</div>';
-      setHTML('errResults', h);
-      var rb = $('errReload');
-      if (rb) rb.addEventListener('click', function(){ buscarErrores(q); });
-    })
-    .catch(function(){ showErrFallback(q); });
-}
-
-function showErrFallback(q){
-  setHTML('errResults',
-    '<div class="ibar">⚠️ No se pudieron obtener precios para "'+esc(q)+'". Inténtalo de nuevo.</div>'
-    +'<button class="rel-btn" id="errRetry" style="margin-top:8px">🔄 Reintentar</button>');
-  var rb = $('errRetry');
-  if (rb) rb.addEventListener('click', function(){ buscarErrores(q); });
-}
-
-
-// ─── CHOLLOS ─────────────────────────────────────────────────────────────────
-// Two completely independent data sources — switching tabs fetches different data
-var RSS2J = 'https://api.rss2json.com/v1/api.json?rss_url=';
-
-var CH_SOURCES = {
-  chollometro: 'https://www.chollometro.com/rss',
-  chollero   : 'https://chollero.es/feed/'
-};
-
-// Cache per source so switching tabs doesn't re-fetch unnecessarily
-var CH_CACHE = { chollometro: null, chollero: null };
-var CH_LOADING = false;
-
-// Wire the 2 sub-tabs from JS — straightforward, no trickery
-document.querySelectorAll('#ctabsWrap .ctab').forEach(function(btn){
-  btn.addEventListener('click', function(){
-    var tab = btn.getAttribute('data-ctab');
-    // Highlight clicked tab
-    document.querySelectorAll('#ctabsWrap .ctab').forEach(function(b){
-      b.classList.toggle('on', b.getAttribute('data-ctab') === tab);
-    });
-    // Update state and load
-    ACTIVE_CTAB = tab;
-    loadOrShowTab(tab);
+    loadDeals(src);
   });
 });
 
-// Called when chollos panel becomes visible, and when tabs are clicked
-function loadChollos(){
-  // Always show the active tab — loadOrShowTab handles caching
-  loadOrShowTab(ACTIVE_CTAB);
-}
+// ─── CATEGORY FILTER ─────────────────────────────────────────────────────────
+document.querySelectorAll('#catFilters .f-chip').forEach(function(c){
+  c.addEventListener('click', function(){
+    ACTIVE_CAT = c.getAttribute('data-cat');
+    document.querySelectorAll('#catFilters .f-chip').forEach(function(x){
+      x.classList.toggle('on', x.getAttribute('data-cat')===ACTIVE_CAT);
+    });
+    applyFilters();
+  });
+});
 
-function loadOrShowTab(tab){
-  // If already cached, show immediately
-  if (CH_CACHE[tab]) {
-    renderChollosItems(CH_CACHE[tab], tab);
+// ─── TEMPERATURE FILTER ──────────────────────────────────────────────────────
+$('tempSlider').addEventListener('input', function(){
+  MIN_TEMP = parseInt(this.value);
+  $('tempVal').textContent = MIN_TEMP+'°';
+  applyFilters();
+});
+
+// ─── LOAD DEALS ──────────────────────────────────────────────────────────────
+function loadDeals(src, forceRefresh){
+  src = src || ACTIVE_SRC;
+  // Use cache if fresh (< 3 min) and not forcing refresh
+  if(!forceRefresh && CACHE[src] && (Date.now()-CACHE[src].fetchedAt) < 180000){
+    ALL_DEALS = CACHE[src].items;
+    checkForNew(src, ALL_DEALS);
+    applyFilters();
     return;
   }
-  // Otherwise fetch
-  setHTML('chollosBody', loader('Cargando '+tab+'…'));
-  CH_LOADING = true;
 
-  var feedUrl = CH_SOURCES[tab];
-  fetch(RSS2J + encodeURIComponent(feedUrl))
+  setHTML('dealsBody', loader('Cargando chollos…'));
+  setHTML('newBar',''); $('newBar').style.display='none';
+
+  fetch(RSS2J + encodeURIComponent(FEEDS[src]))
     .then(function(r){ return r.ok ? r.json() : Promise.reject('http-'+r.status); })
     .then(function(data){
-      if (!data || data.status === 'error') throw new Error('rss-error: '+data.message);
-      var items = parseChollosItems(data.items || [], tab);
-      CH_CACHE[tab] = items.length ? items : DEMO_CHOLLOS(tab);
-      CH_LOADING = false;
-      renderChollosItems(CH_CACHE[tab], tab);
+      if(!data || data.status==='error') throw new Error(data.message||'rss-error');
+      var items = parseDeals(data.items||[], src);
+      CACHE[src] = { items:items, fetchedAt:Date.now() };
+      ALL_DEALS  = items;
+      checkForNew(src, items);
+      applyFilters();
     })
     .catch(function(err){
-      console.warn('Chollos fetch error ('+tab+'):', err);
-      CH_LOADING = false;
-      CH_CACHE[tab] = DEMO_CHOLLOS(tab);
-      renderChollosItems(CH_CACHE[tab], tab);
+      console.warn('Feed error:', err);
+      setHTML('dealsBody',
+        '<div class="empty-state"><div class="empty-icon">⚠️</div>'
+        +'<div class="empty-title">No se pudo cargar</div>'
+        +'<div class="empty-sub">Comprueba tu conexión e inténtalo de nuevo.</div></div>'
+        +'<button class="rel-btn" id="retryBtn">🔄 Reintentar</button>');
+      var rb=$('retryBtn');
+      if(rb) rb.addEventListener('click',function(){ loadDeals(src,true); });
     });
 }
 
-function parseChollosItems(items, source){
-  return items.map(function(item){
-    // Clean title
-    var title = (item.title || '')
-      .replace(/\s*\|\s*(Chollometro|Chollero).*/i, '')
-      .replace(/\s*\(\d+°\)/, '')
+// ─── PARSE DEALS ─────────────────────────────────────────────────────────────
+function parseDeals(items, src){
+  return items.map(function(item, idx){
+    // Title — strip source suffix
+    var title = (item.title||'')
+      .replace(/\s*\|\s*(Chollometro|Dealabs|Chollo).*/i,'')
+      .replace(/\s*\(\d+°\)/,'')
       .replace(/&amp;/g,'&').replace(/&quot;/g,'"').trim();
-    if (!title) return null;
+    if(!title) return null;
 
     var desc = item.description || item.content || '';
-    var all  = title + ' ' + desc;
+    var all  = title+' '+desc;
 
-    // Votes/temperature (Chollometro specific)
-    var tempM = all.match(/(\d+)\s*°/);
+    // Votes / temperature — Pepper format: "847°" in title or desc
+    var tempM = (item.title||'').match(/\|\s*(\d+)°/) || all.match(/(\d+)\s*°/);
     var votes = tempM ? parseInt(tempM[1]) : 0;
 
-    // Comments
-    var commM = desc.match(/(\d+)\s*(?:comentarios?|comments?)/i);
-    var comments = commM ? parseInt(commM[1]) : 0;
-
-    // Price — look for euro amounts
-    var prM   = all.match(/([\d]+(?:[.,][\d]{2})?)\s*€/) || all.match(/€\s*([\d]+(?:[.,][\d]{2})?)/);
+    // Price — look in description for price patterns
+    var prM = desc.match(/class="[^"]*price[^"]*"[^>]*>\s*([^<]*)/i)
+      || all.match(/([\d]+[.,][\d]{2})\s*€/)
+      || all.match(/€\s*([\d]+[.,][\d]{2})/);
     var price = prM ? pPrice(prM[1]) : null;
-    if (price && price > 50000) price = null; // sanity check
+    if(price && price > 50000) price = null;
 
     // Previous price
-    var pvM       = desc.match(/~~([\d,.]+)\s*€~~/) || desc.match(/antes[:\s]*([\d,.]+)\s*€/i) || desc.match(/precio\s+anterior[:\s]*([\d,.]+)\s*€/i);
+    var pvM = desc.match(/~~([\d,.]+)\s*€~~/)
+      || desc.match(/antes[:\s]*([\d,.]+)\s*€/i)
+      || desc.match(/<s[^>]*>([\d,.]+)\s*€<\/s>/i);
     var prevPrice = pvM ? pPrice(pvM[1]) : null;
-    if (prevPrice && price && prevPrice <= price) prevPrice = null;
+    if(prevPrice && price && prevPrice <= price) prevPrice = null;
 
-    // Image — prefer thumbnail from rss2json, then first img tag in description
+    // Discount %
+    var discM = desc.match(/(-\d+)\s*%/) || desc.match(/(\d+)\s*%\s*(?:de\s+)?descuento/i);
+    var discPct = discM ? Math.abs(parseInt(discM[1])) : 0;
+    if(!discPct && price && prevPrice) discPct = Math.round((1-price/prevPrice)*100);
+
+    // Image — rss2json puts first image in thumbnail
     var image = item.thumbnail || null;
-    if (!image) {
-      var imgM = desc.match(/<img[^>]+src=["']([^"']+)["']/i);
-      if (imgM) image = imgM[1];
+    if(image && (image.length<10||image.includes('pixel')||image.includes('1x1'))) image=null;
+    if(!image){
+      var imgM=desc.match(/<img[^>]+src=["']([^"']+)["']/i);
+      if(imgM) image=imgM[1];
     }
-    // Skip tiny tracking pixels
-    if (image && (image.includes('pixel') || image.includes('track') || image.length < 10)) image = null;
 
-    var cats     = item.categories || [];
-    var category = cats[0] || 'General';
+    // Store name (Pepper includes it in description)
+    var storeM = desc.match(/(?:en|at|tienda)[:\s]+<[^>]+>([^<]{2,40})<\/a>/i)
+      || desc.match(/Tienda[:\s]+([^\s<]{2,30})/i);
+    var storeName = storeM ? storeM[1].trim() : '';
+
+    // Categories
+    var cats = item.categories || [];
+    var cat  = cats[0] || '';
+
+    // Unique ID
+    var id = (item.guid||item.link||'').replace(/[^a-z0-9]/gi,'').slice(-20) || String(idx);
 
     return {
+      id       : id,
       title    : title,
-      link     : item.link || CH_SOURCES[source],
+      link     : item.link || FEEDS[src],
       price    : price,
       prevPrice: prevPrice,
+      discPct  : discPct,
       votes    : votes,
-      comments : comments,
-      category : category,
+      cat      : cat,
+      store    : storeName,
       image    : image,
       pubDate  : item.pubDate,
       timeAgo  : item.pubDate ? relTime(new Date(item.pubDate)) : 'reciente',
-      source   : source
+      src      : src
     };
   }).filter(Boolean);
 }
 
-function renderChollosItems(items, tab){
-  var hot = items.filter(function(c){ return c.votes >= 200; });
-  var src = tab === 'chollometro' ? 'Chollometro' : 'Chollero.es';
+// ─── APPLY FILTERS & RENDER ───────────────────────────────────────────────────
+function applyFilters(){
+  if(!ALL_DEALS.length && ACTIVE_TAB==='deals') return;
+  var filtered = ALL_DEALS.filter(function(d){
+    if(MIN_TEMP > 0 && d.votes < MIN_TEMP) return false;
+    if(ACTIVE_CAT && !matchCat(d.cat, ACTIVE_CAT)) return false;
+    return true;
+  });
+  renderDeals(filtered);
+}
+
+function matchCat(cat, filter){
+  if(!filter) return true;
+  var catL = (cat||'').toLowerCase();
+  var map = {
+    'Electrónica' : ['electr','móvil','phone','tablet','laptop','pc','audio','tv','camera','tech','informática'],
+    'Gaming'      : ['gaming','juego','game','consola','ps','xbox','nintendo','steam'],
+    'Hogar'       : ['hogar','casa','cocina','mueble','jardín','electrodomé','aspirador'],
+    'Moda'        : ['moda','ropa','zapato','complemento','fashion'],
+    'Alimentación': ['aliment','comida','bebida','supermercado','food'],
+    'Viajes'      : ['viaje','hotel','vuelo','travel','turismo'],
+    'Deporte'     : ['deporte','sport','gym','fitness','bici','running']
+  };
+  var keys = map[filter] || [filter.toLowerCase()];
+  return keys.some(function(k){ return catL.includes(k); });
+}
+
+function renderDeals(items){
+  if(!items.length){
+    setHTML('dealsBody',
+      '<div class="empty-state"><div class="empty-icon">🔍</div>'
+      +'<div class="empty-title">Sin resultados</div>'
+      +'<div class="empty-sub">Prueba a cambiar los filtros o bajar la temperatura mínima.</div></div>');
+    return;
+  }
+
   var h = '';
+  items.forEach(function(d){
+    var isFav  = !!FAVS[d.id];
+    var isSeen = !!HISTORY[d.id];
+    var isHot  = d.votes >= 300;
 
-  if (hot.length) {
-    h += '<div class="ibar">🔥 '+hot.length+' chollos con más de 200° en '+src+'</div>';
-  }
+    h += '<div class="deal'+(isSeen?' seen':'')+'" data-id="'+esc(d.id)+'" data-link="'+esc(d.link)+'">';
 
-  items.slice(0, 25).forEach(function(c){
-    var disc = (c.price && c.prevPrice) ? Math.round((1 - c.price/c.prevPrice)*100) : 0;
-    h += '<div class="card">'
-      + (c.votes >= 300 ? '<div class="hotbdg">🔥 HOT</div>' : '')
-      // Image
-      + (c.image
-          ? '<img src="'+esc(c.image)+'" style="width:100%;height:90px;object-fit:cover;border-radius:8px;margin-bottom:8px" loading="lazy" onerror="this.remove()">'
-          : '')
-      + '<div class="chttl">'+esc(c.title)+'</div>'
-      + '<div class="chmeta">'
-      + (c.price     ? '<span class="chprc">'+fmt(c.price)+'</span>' : '')
-      + (c.prevPrice ? '<span class="chold">'+fmt(c.prevPrice)+'</span>' : '')
-      + (disc        ? '<span class="bdg br">-'+disc+'%</span>' : '')
-      + (c.votes     ? '<span class="chvotes">🌡️ '+c.votes+'°</span>' : '')
-      + '</div>'
-      + '<div class="chfoot">'
-      + '🕐 '+esc(c.timeAgo)+' · '+esc(c.category)
-      + (c.comments ? ' · 💬 '+c.comments : '')
-      + '<a class="chlnk" href="'+esc(c.link)+'" target="_blank" rel="noopener">Ver →</a>'
-      + '</div></div>';
-  });
-
-  h += '<button class="rel-btn" id="chReload">🔄 Actualizar '+esc(src)+'</button>';
-  h += '<div class="cap">Fuente: '+esc(src)+'</div>';
-  setHTML('chollosBody', h);
-
-  var rb = $('chReload');
-  if (rb) rb.addEventListener('click', function(){
-    CH_CACHE[tab] = null; // clear cache for this tab only
-    loadOrShowTab(tab);
-  });
-}
-
-function relTime(d){
-  var s = Math.floor((Date.now() - d) / 1000);
-  if (s < 60)    return 'hace '+s+'s';
-  if (s < 3600)  return 'hace '+Math.floor(s/60)+' min';
-  if (s < 86400) return 'hace '+Math.floor(s/3600)+'h';
-  return 'hace '+Math.floor(s/86400)+'d';
-}
-
-function DEMO_CHOLLOS(tab){
-  var link = tab === 'chollero' ? 'https://chollero.es' : 'https://www.chollometro.com';
-  return [
-    {title:'Xiaomi Redmi Note 13 Pro 256GB', price:199,prevPrice:329,votes:847,timeAgo:'hace 12 min',category:'Móviles', comments:43,link:link,image:null},
-    {title:'AirPods Pro 2 — precio mínimo',  price:189,prevPrice:279,votes:623,timeAgo:'hace 34 min',category:'Audio',   comments:31,link:link,image:null},
-    {title:'Dyson V15 Detect',               price:399,prevPrice:649,votes:512,timeAgo:'hace 1h',    category:'Hogar',   comments:27,link:link,image:null},
-    {title:'SSD Samsung 990 Pro 2TB',        price:89, prevPrice:149,votes:401,timeAgo:'hace 2h',    category:'PC',      comments:19,link:link,image:null},
-    {title:'Nintendo Switch OLED + Mario',   price:299,prevPrice:349,votes:387,timeAgo:'hace 3h',    category:'Gaming',  comments:55,link:link,image:null},
-    {title:'Sony WH-1000XM5 ANC',            price:249,prevPrice:399,votes:334,timeAgo:'hace 4h',    category:'Audio',   comments:22,link:link,image:null},
-  ];
-}
-
-// ─── ALERTAS ─────────────────────────────────────────────────────────────────
-function renderAlerts(){
-  var h = '';
-
-  if (SHOW_FORM){
-    var currentQ = $('q') ? $('q').value : '';
-    h += '<div class="al-form"><h3>➕ Nueva alerta de precio</h3>'
-      + '<input class="fld" id="alProduct" placeholder="Producto (ej: iPhone 15 Pro)" value="'+esc(currentQ)+'">'
-      + '<input class="fld" id="alPrice" type="number" placeholder="Precio objetivo en € (opcional)" step="0.01" min="0">'
-      + '<div class="form-btns">'
-      + '<button class="btn-cancel" id="alCancel">Cancelar</button>'
-      + '<button class="btn-save"   id="alSave">Guardar alerta</button>'
-      + '</div></div>';
-  }
-
-  h += '<div class="sec">Mis alertas de precio</div>';
-
-  if (!ALERTS.length){
-    h += '<div class="empty">'
-      + '<div class="ei">🔔</div>'
-      + '<div class="et">Sin alertas aún</div>'
-      + '<div class="es">Crea alertas para que te avisen cuando un producto baje de precio.</div>'
-      + '</div>';
-  } else {
-    h += '<div class="card">';
-    ALERTS.forEach(function(a, i){
-      h += '<div class="alrow">'
-        + '<div class="aldot '+(a.active?'':'off')+'"></div>'
-        + '<div class="alinfo">'
-        + '<div class="alnm">'+esc(a.product)+'</div>'
-        + '<div class="alsub">Objetivo: '+(a.targetPrice ? fmt(a.targetPrice) : 'cualquier bajada')+'</div>'
-        + '</div>'
-        + '<div class="toggle '+(a.active?'on':'')+'" data-idx="'+i+'"></div>'
-        + '<button class="del-btn" data-idx="'+i+'" title="Eliminar">🗑</button>'
-        + '</div>';
-    });
-    h += '</div>';
-  }
-
-  if (!SHOW_FORM){
-    h += '<button class="add-btn" id="alAddBtn" style="margin-top:8px">+ Nueva alerta de precio</button>';
-  }
-
-  setHTML('alertsBody', h);
-
-  // Wire buttons AFTER setHTML (elements now exist in DOM)
-  if ($('alAddBtn')){
-    $('alAddBtn').addEventListener('click', function(){
-      SHOW_FORM = true;
-      renderAlerts();
-    });
-  }
-  if ($('alCancel')){
-    $('alCancel').addEventListener('click', function(){
-      SHOW_FORM = false;
-      renderAlerts();
-    });
-  }
-  if ($('alSave')){
-    $('alSave').addEventListener('click', saveAlert);
-  }
-  // Toggle switches
-  document.querySelectorAll('.toggle[data-idx]').forEach(function(el){
-    el.addEventListener('click', function(){
-      var i = parseInt(el.getAttribute('data-idx'));
-      ALERTS[i].active = !ALERTS[i].active;
-      localStorage.setItem('ph_alerts', JSON.stringify(ALERTS));
-      renderAlerts();
-    });
-  });
-  // Delete buttons
-  document.querySelectorAll('.del-btn[data-idx]').forEach(function(el){
-    el.addEventListener('click', function(){
-      var i = parseInt(el.getAttribute('data-idx'));
-      var name = ALERTS[i].product;
-      ALERTS.splice(i, 1);
-      localStorage.setItem('ph_alerts', JSON.stringify(ALERTS));
-      renderAlerts();
-      toast('"'+name+'" eliminada');
-    });
-  });
-}
-
-function saveAlert(){
-  var productEl = $('alProduct');
-  var priceEl   = $('alPrice');
-  if (!productEl) return;
-  var product = productEl.value.trim();
-  if (!product){ toast('Escribe el nombre del producto'); return; }
-  var tp = priceEl && priceEl.value ? parseFloat(priceEl.value) : null;
-  ALERTS.unshift({ product: product, targetPrice: tp, active: true, created: Date.now() });
-  localStorage.setItem('ph_alerts', JSON.stringify(ALERTS));
-  SHOW_FORM = false;
-  renderAlerts();
-  toast('✅ Alerta creada para "'+product+'"');
-}
-
-// ─── NOTIFICACIONES ───────────────────────────────────────────────────────────
-$('notifBtn').addEventListener('click', function(){
-  // On Android PWA, notifications require HTTPS + explicit user interaction
-  if (!('Notification' in window)){
-    toast('Tu navegador no soporta notificaciones push');
-    return;
-  }
-  if (Notification.permission === 'granted'){
-    toast('✅ Notificaciones ya activadas');
-    return;
-  }
-  if (Notification.permission === 'denied'){
-    toast('🔒 Notificaciones bloqueadas — actívalas en Ajustes del navegador');
-    return;
-  }
-  // 'default' — request permission
-  // Must be called directly from a user gesture (it is, since we're inside a click handler)
-  Notification.requestPermission().then(function(permission){
-    if (permission === 'granted'){
-      // Show a test notification
-      if ('serviceWorker' in navigator && navigator.serviceWorker.controller){
-        navigator.serviceWorker.controller.postMessage({ type: 'TEST_NOTIF' });
-      } else {
-        new Notification('PriceHunter ✅', {
-          body: '¡Notificaciones activadas! Te avisaremos de los mejores chollos.',
-          icon: 'icon-192.png'
-        });
-      }
-      toast('✅ Notificaciones activadas');
-    } else if (permission === 'denied'){
-      toast('🔒 Denegadas — actívalas en Ajustes del navegador');
-    } else {
-      toast('Cierra el diálogo para continuar');
+    // Image
+    if(d.image){
+      h += '<img class="deal-img thumb" src="'+esc(d.image)+'" loading="lazy" onerror="this.remove()">';
     }
-  }).catch(function(err){
-    // Some browsers (older Android) use callback syntax
-    toast('Error al solicitar permisos');
-    console.warn('Notification error:', err);
+
+    // HOT badge
+    if(isHot) h += '<div class="hot-badge">🔥 '+d.votes+'°</div>';
+
+    // Fav button
+    h += '<button class="fav-btn" data-id="'+esc(d.id)+'" title="'+(isFav?'Quitar de favoritos':'Guardar')+'">'
+      +(isFav?'⭐':'🤍')+'</button>';
+
+    h += '<div class="deal-body">';
+
+    // Store
+    if(d.store) h += '<div class="deal-store">'+esc(d.store)+'</div>';
+
+    // Title
+    h += '<div class="deal-title">'+esc(d.title)+'</div>';
+
+    // Price row
+    h += '<div class="deal-meta">';
+    if(d.price)     h += '<span class="deal-price">'+fmt(d.price)+'</span>';
+    if(d.prevPrice) h += '<span class="deal-prev">'+fmt(d.prevPrice)+'</span>';
+    if(d.discPct)   h += '<span class="deal-disc">-'+d.discPct+'%</span>';
+    if(!isHot && d.votes) h += '<span class="deal-votes" style="margin-left:auto">🌡️ '+d.votes+'°</span>';
+    h += '</div>';
+
+    h += '</div>';// deal-body
+
+    // Footer
+    h += '<div class="deal-foot">';
+    if(d.cat) h += '<span class="deal-cat">'+esc(d.cat)+'</span>';
+    h += '<span class="deal-time">'+esc(d.timeAgo)+'</span>';
+    h += '</div>';
+
+    h += '</div>';// deal
+  });
+
+  h += '<button class="rel-btn" id="reloadBtn">🔄 Actualizar</button>';
+  h += '<div class="cap">'+esc(ACTIVE_SRC==='chollometro'?'Chollometro':'Dealabs')+' · '+new Date().toLocaleTimeString('es-ES')+'</div>';
+
+  setHTML('dealsBody', h);
+
+  // Wire deal clicks
+  document.querySelectorAll('#dealsBody .deal').forEach(function(el){
+    el.addEventListener('click', function(e){
+      // Don't trigger if clicking the fav button
+      if(e.target.closest('.fav-btn')) return;
+      var id   = el.getAttribute('data-id');
+      var link = el.getAttribute('data-link');
+      markSeen(id);
+      el.classList.add('seen');
+      window.open(link,'_blank','noopener');
+    });
+  });
+
+  // Wire fav buttons
+  document.querySelectorAll('#dealsBody .fav-btn').forEach(function(btn){
+    btn.addEventListener('click', function(e){
+      e.stopPropagation();
+      var id = btn.getAttribute('data-id');
+      var deal = ALL_DEALS.find(function(d){ return d.id===id; });
+      if(!deal) return;
+      toggleFav(id, deal, btn);
+    });
+  });
+}
+
+// ─── FAVORITES ────────────────────────────────────────────────────────────────
+function toggleFav(id, deal, btn){
+  if(FAVS[id]){
+    delete FAVS[id];
+    if(btn){ btn.textContent='🤍'; btn.title='Guardar'; }
+    toast('Eliminado de favoritos');
+  } else {
+    FAVS[id] = deal;
+    if(btn){ btn.textContent='⭐'; btn.title='Quitar de favoritos'; }
+    toast('⭐ Guardado en favoritos');
+  }
+  store('ch_favs', FAVS);
+  updateFavsBadge();
+}
+
+function updateFavsBadge(){
+  var count = Object.keys(FAVS).length;
+  var badge = $('favsBadge');
+  if(badge){
+    badge.textContent = count;
+    badge.style.display = count > 0 ? 'flex' : 'none';
+  }
+}
+
+function renderFavs(){
+  var items = Object.values(FAVS);
+  if(!items.length){
+    setHTML('favsBody',
+      '<div class="empty-state"><div class="empty-icon">⭐</div>'
+      +'<div class="empty-title">Sin favoritos</div>'
+      +'<div class="empty-sub">Pulsa el corazón en cualquier chollo para guardarlo aquí.</div></div>');
+    return;
+  }
+  var h = '<div class="panel-title">Mis favoritos ('+items.length+')</div>';
+  items.forEach(function(d){
+    h += dealMiniCard(d, true);
+  });
+  h += '<button class="clear-btn" id="clearFavs">🗑️ Borrar todos los favoritos</button>';
+  setHTML('favsBody', h);
+  wireMiniCards('favsBody');
+  var cb = $('clearFavs');
+  if(cb) cb.addEventListener('click', function(){
+    FAVS = {}; store('ch_favs', FAVS); updateFavsBadge(); renderFavs();
+    toast('Favoritos eliminados');
+  });
+}
+
+// ─── HISTORY ─────────────────────────────────────────────────────────────────
+function markSeen(id){
+  HISTORY[id] = Date.now();
+  // Keep only last 100
+  var keys = Object.keys(HISTORY);
+  if(keys.length > 100){
+    keys.sort(function(a,b){ return HISTORY[a]-HISTORY[b]; });
+    keys.slice(0, keys.length-100).forEach(function(k){ delete HISTORY[k]; });
+  }
+  store('ch_hist', HISTORY);
+}
+
+function renderHistory(){
+  // Show history items that are still in current ALL_DEALS or FAVS
+  var seenIds = Object.keys(HISTORY).sort(function(a,b){ return HISTORY[b]-HISTORY[a]; });
+  var items = seenIds.map(function(id){
+    return ALL_DEALS.find(function(d){ return d.id===id; }) || FAVS[id];
+  }).filter(Boolean).slice(0,30);
+
+  if(!items.length){
+    setHTML('historyBody',
+      '<div class="empty-state"><div class="empty-icon">🕐</div>'
+      +'<div class="empty-title">Sin historial</div>'
+      +'<div class="empty-sub">Los chollos que abras aparecerán aquí.</div></div>');
+    return;
+  }
+  var h = '<div class="panel-title">Vistos recientemente ('+items.length+')</div>';
+  items.forEach(function(d){ h += dealMiniCard(d, false); });
+  h += '<button class="clear-btn" id="clearHist">🗑️ Borrar historial</button>';
+  setHTML('historyBody', h);
+  wireMiniCards('historyBody');
+  var cb = $('clearHist');
+  if(cb) cb.addEventListener('click', function(){
+    HISTORY = {}; store('ch_hist', HISTORY); renderHistory();
+    toast('Historial borrado');
+  });
+}
+
+// ─── MINI CARD (for favs and history) ────────────────────────────────────────
+function dealMiniCard(d, showRemove){
+  var isFav = !!FAVS[d.id];
+  return '<div class="deal" data-id="'+esc(d.id)+'" data-link="'+esc(d.link)+'">'
+    +(d.image?'<img class="deal-img thumb" src="'+esc(d.image)+'" loading="lazy" onerror="this.remove()">':'')
+    +'<button class="fav-btn" data-id="'+esc(d.id)+'">'+(isFav?'⭐':'🤍')+'</button>'
+    +'<div class="deal-body">'
+    +(d.store?'<div class="deal-store">'+esc(d.store)+'</div>':'')
+    +'<div class="deal-title">'+esc(d.title)+'</div>'
+    +'<div class="deal-meta">'
+    +(d.price?'<span class="deal-price">'+fmt(d.price)+'</span>':'')
+    +(d.prevPrice?'<span class="deal-prev">'+fmt(d.prevPrice)+'</span>':'')
+    +(d.discPct?'<span class="deal-disc">-'+d.discPct+'%</span>':'')
+    +(d.votes?'<span class="deal-votes" style="margin-left:auto">🌡️ '+d.votes+'°</span>':'')
+    +'</div></div>'
+    +'<div class="deal-foot">'
+    +(d.cat?'<span class="deal-cat">'+esc(d.cat)+'</span>':'')
+    +'<span class="deal-time">'+esc(d.timeAgo||'')+'</span>'
+    +'</div></div>';
+}
+
+function wireMiniCards(containerId){
+  var container = $(containerId);
+  if(!container) return;
+  container.querySelectorAll('.deal').forEach(function(el){
+    el.addEventListener('click', function(e){
+      if(e.target.closest('.fav-btn')) return;
+      var id=el.getAttribute('data-id');
+      var link=el.getAttribute('data-link');
+      markSeen(id); el.classList.add('seen');
+      window.open(link,'_blank','noopener');
+    });
+  });
+  container.querySelectorAll('.fav-btn').forEach(function(btn){
+    btn.addEventListener('click', function(e){
+      e.stopPropagation();
+      var id=btn.getAttribute('data-id');
+      var deal=ALL_DEALS.find(function(d){ return d.id===id; })||FAVS[id];
+      if(deal) toggleFav(id,deal,btn);
+      // Re-render the panel to reflect change
+      if(containerId==='favsBody') renderFavs();
+    });
+  });
+}
+
+// ─── NEW DEALS COUNTER ────────────────────────────────────────────────────────
+function checkForNew(src, items){
+  var last = LAST_SEEN[src] ? new Date(LAST_SEEN[src]) : null;
+  if(!last){ LAST_SEEN[src]=new Date().toISOString(); store('ch_last',LAST_SEEN); return; }
+
+  var newOnes = items.filter(function(d){
+    return d.pubDate && new Date(d.pubDate) > last;
+  });
+
+  var bar = $('newBar');
+  if(bar && newOnes.length > 0){
+    bar.textContent = '✨ '+newOnes.length+' chollos nuevos desde tu última visita';
+    bar.style.display = 'block';
+  }
+
+  // Update last seen timestamp
+  LAST_SEEN[src] = new Date().toISOString();
+  store('ch_last', LAST_SEEN);
+}
+
+// ─── RELOAD BUTTON ────────────────────────────────────────────────────────────
+// Wired dynamically after render, but also handle it here as delegation
+document.getElementById('dealsBody') && document.getElementById('dealsBody')
+  .addEventListener('click', function(e){
+    if(e.target && e.target.id==='reloadBtn'){
+      delete CACHE[ACTIVE_SRC];
+      loadDeals(ACTIVE_SRC, true);
+    }
+  });
+
+// ─── NOTIFICATIONS ────────────────────────────────────────────────────────────
+$('notifBtn').addEventListener('click', function(){
+  if(!('Notification' in window)){ toast('Tu navegador no soporta notificaciones'); return; }
+  if(Notification.permission==='granted'){ toast('✅ Notificaciones ya activadas'); return; }
+  if(Notification.permission==='denied'){
+    toast('🔒 Bloqueadas — actívalas en Ajustes del navegador'); return;
+  }
+  Notification.requestPermission().then(function(p){
+    if(p==='granted'){
+      new Notification('Chollos ✅',{body:'¡Notificaciones activadas!',icon:'icon-192.png'});
+      toast('✅ Notificaciones activadas');
+    } else {
+      toast('Notificaciones denegadas');
+    }
   });
 });
 
 // ─── SERVICE WORKER ───────────────────────────────────────────────────────────
-if ('serviceWorker' in navigator){
-  navigator.serviceWorker.register('sw.js')
-    .then(function(reg){
-      console.log('SW registered:', reg.scope);
-    })
-    .catch(function(err){
-      console.warn('SW registration failed:', err);
-    });
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('sw.js').catch(function(){});
 }
+
+// ─── INIT ─────────────────────────────────────────────────────────────────────
+updateFavsBadge();
+loadDeals('chollometro');
 </script>
 </body>
 </html>
