@@ -274,8 +274,7 @@ function pPrice(s){
 
 // ─── STATE ────────────────────────────────────────────────────────────────────
 var ACTIVE_TAB  = 'search';
-var ACTIVE_CTAB = 'hot';
-var CH_DATA     = null;   // { hot:[], fresh:[], commented:[], loaded: bool }
+var ACTIVE_CTAB = 'chollometro';
 var CH_LOADING  = false;
 var SHOW_FORM   = false;
 var ALERTS      = JSON.parse(localStorage.getItem('ph_alerts') || '[]');
@@ -307,7 +306,7 @@ function switchTab(tab){
   });
 
   // Lazy load
-  if (tab === 'chollos' && !CH_DATA && !CH_LOADING) loadChollos();
+  if (tab === 'chollos') loadChollos();
   if (tab === 'errores') initErrores();
   if (tab === 'alerts')  renderAlerts();
 }
@@ -370,136 +369,146 @@ function sCard(name, sub, url){
 }
 
 // ─── ERRORES DE PRECIO ────────────────────────────────────────────────────────
-// Fetches Amazon RSS search and flags items with big price drops vs. typical range
 function initErrores(){
-  var q = $('q').value.trim();
-  if (!q) {
-    setHTML('erroresBody',
-      '<div class="ibar info">⚡ Escribe un producto en el buscador de arriba y pulsa Buscar para detectar errores de precio.</div>'
-      +'<div class="empty"><div class="ei">🔎</div><div class="et">Detector de errores de precio</div>'
-      +'<div class="es">Compara el precio actual de Amazon con el precio habitual de otras tiendas.<br><br>'
-      +'Un error de precio es cuando un artículo está un 40%+ más barato que en el resto de tiendas.</div></div>');
-    return;
-  }
-  buscarErrores(q);
+  var q = ($('q') && $('q').value.trim()) || '';
+  setHTML('erroresBody',
+    '<div class="ibar info">⚡ Detecta cuando un producto está a precio de error comparado con otras tiendas</div>'
+    +'<div class="srch" style="margin-bottom:14px">'
+    +'<input id="errQ" type="search" placeholder="Ej: Xiaomi 14T Pro, PS5…" value="'+esc(q)+'" autocomplete="off" '
+    +'style="flex:1;height:44px;background:var(--card);border:1px solid var(--b2);border-radius:var(--r);padding:0 14px;color:var(--text);font-size:14px;outline:none">'
+    +'<button id="errBtn" style="height:44px;padding:0 16px;background:var(--accent);border:none;border-radius:var(--r);color:#fff;font-size:14px;font-weight:600;cursor:pointer">Analizar</button>'
+    +'</div>'
+    +'<div id="errResults"><div class="empty"><div class="ei">🔎</div>'
+    +'<div class="et">Escribe un producto y pulsa Analizar</div>'
+    +'<div class="es">Comparamos precios de múltiples tiendas y detectamos si alguno está un 35%+ más barato que el resto — posible error de precio.</div>'
+    +'</div></div>'
+  );
+  var btn = $('errBtn'), inp = $('errQ');
+  if (btn) btn.addEventListener('click', function(){ var v=inp?inp.value.trim():''; if(v) buscarErrores(v); });
+  if (inp) inp.addEventListener('keydown', function(e){ if(e.key==='Enter'){ var v=inp.value.trim(); if(v) buscarErrores(v); } });
+  if (q) buscarErrores(q);
 }
 
 function buscarErrores(q){
-  setHTML('erroresBody', loader('Analizando precios de "'+esc(q)+'"…'));
+  setHTML('errResults', loader('Analizando precios de "'+esc(q)+'"…'));
 
-  // Amazon has a public product advertising RSS for search results
-  var amazonUrl = 'https://www.amazon.es/s?k='+encodeURIComponent(q)+'&s=price-asc-rank';
-  // Use rss2json to fetch Amazon's search page structured data isn't available without API key
-  // Instead: fetch Google Shopping via rss2json to get price range
+  // Use rss2json to fetch a price comparison RSS — try multiple sources
   var RSS2J = 'https://api.rss2json.com/v1/api.json?rss_url=';
-  var shopRSS = 'https://www.google.com/search?q='+encodeURIComponent(q)+'&tbm=shop&hl=es&gl=ES&output=rss';
+  // Idealo has a public RSS feed per search with prices
+  var idealoRSS = 'https://www.idealo.es/precios/buscar.html?q='+encodeURIComponent(q)+'&outputType=rss';
+  // Also try Google Shopping RSS as backup
+  var shopRSS   = 'https://www.google.com/search?q='+encodeURIComponent(q)+'&tbm=shop&hl=es&gl=ES&output=rss';
 
-  fetch(RSS2J + encodeURIComponent(shopRSS))
-    .then(function(r){ return r.ok ? r.json() : Promise.reject('fail'); })
+  // Try idealo first (has structured price data in RSS), then Google Shopping
+  fetch(RSS2J + encodeURIComponent(idealoRSS))
+    .then(function(r){ return r.ok ? r.json() : Promise.reject('idealo-fail'); })
     .then(function(data){
-      var items = (data.items || []).map(function(item){
+      if (!data || data.status === 'error' || !(data.items||[]).length) throw new Error('no-items');
+      return data;
+    })
+    .catch(function(){
+      // Fallback to Google Shopping RSS
+      return fetch(RSS2J + encodeURIComponent(shopRSS))
+        .then(function(r){ return r.ok ? r.json() : Promise.reject('shop-fail'); });
+    })
+    .then(function(data){
+      var rawItems = data.items || [];
+      var items = rawItems.map(function(item){
         var desc = item.description || '';
-        var raw  = item['g:price'] || item.price || ''
-          || (desc.match(/([\d]+[.,][\d]{2})\s*(?:EUR|€)/) || ['',''])[1];
+        var all  = (item.title||'') + ' ' + desc;
+        // Try to extract price from multiple fields
+        var raw = item['g:price'] || item.price
+          || (all.match(/([\d]+[.,][\d]{2})\s*(?:EUR|€)/) || ['',''])[1]
+          || (all.match(/€\s*([\d]+[.,][\d]{2})/) || ['',''])[1]
+          || (all.match(/([\d]+[.,][\d]{2})/) || ['',''])[1];
         var price = pPrice(raw);
-        var store = item['g:store'] || item.author || extractDomain(item.link) || '';
-        // Image: rss2json puts it in enclosure or g:image_link or thumbnail
+        if (price <= 0 || price > 100000) return null;
+        var store = item['g:store'] || item.author || extractDomain(item.link) || 'Tienda';
         var image = item['g:image_link'] || item.thumbnail || null;
         if (image && image.url) image = image.url;
         if (!image && item.enclosure && item.enclosure.link) image = item.enclosure.link;
-        return price > 0 ? {
-          title: (item.title||q).replace(/&amp;/g,'&').replace(/&quot;/g,'"').trim(),
-          price: price, store: store, url: item.link, image: image
-        } : null;
+        return {
+          title: (item.title||q).replace(/&amp;/g,'&').replace(/&quot;/g,'"').replace(/<[^>]+>/g,'').trim(),
+          price: price, store: store, url: item.link||'#', image: image
+        };
       }).filter(Boolean);
 
-      if (!items.length) { renderErroresFallback(q); return; }
+      if (!items.length) { showErrFallback(q); return; }
 
-      // Sort by price
       items.sort(function(a,b){ return a.price - b.price; });
+      var prices  = items.map(function(i){ return i.price; });
+      var minP    = prices[0];
+      var maxP    = prices[prices.length-1];
+      var midIdx  = Math.floor(prices.length/2);
+      var medianP = prices[midIdx];
+      var errores = items.filter(function(i){ return i.price < medianP * 0.65; });
 
-      var prices = items.map(function(i){ return i.price; });
-      var minP   = prices[0];
-      var maxP   = prices[prices.length-1];
-      var avgP   = prices.reduce(function(a,b){ return a+b; },0) / prices.length;
-      var medianP= prices[Math.floor(prices.length/2)];
-
-      var errores = items.filter(function(i){
-        // Flag if price is 35%+ below median
-        return i.price < medianP * 0.65;
-      });
-
-      var h = '<div class="ibar ok">✅ Análisis de '+items.length+' resultados para "'+esc(q)+'"</div>';
-      h += '<div class="card" style="font-size:12px;color:var(--t2);line-height:1.9">'
-        +'<div>Precio más bajo: <b style="color:var(--green)">'+fmt(minP)+'</b></div>'
+      var h = '<div class="ibar ok">✅ '+items.length+' precios analizados para "'+esc(q)+'"</div>'
+        +'<div class="card" style="font-size:12px;color:var(--t2);line-height:2">'
+        +'<div>Más barato: <b style="color:var(--green)">'+fmt(minP)+'</b></div>'
         +'<div>Precio mediano: <b style="color:var(--text)">'+fmt(medianP)+'</b></div>'
-        +'<div>Precio más alto: <b style="color:var(--t2)">'+fmt(maxP)+'</b></div>'
+        +'<div>Más caro: <b style="color:var(--t2)">'+fmt(maxP)+'</b></div>'
         +'</div>';
 
-      if (errores.length) {
-        h += '<div class="sec" style="margin-top:6px">⚡ Posibles errores de precio detectados</div>';
+      if (errores.length){
+        h += '<div class="sec" style="margin-top:6px;color:var(--red)">⚡ Posibles errores de precio</div>';
         errores.forEach(function(item){
           var diff = Math.round((1 - item.price/medianP)*100);
           h += '<div class="card err-card">'
-            +(item.image ? '<img src="'+esc(item.image)+'" style="width:100%;height:100px;object-fit:contain;border-radius:8px;margin-bottom:8px;background:var(--bg3)" loading="lazy" onerror="this.remove()">' : '')
-            +'<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">'
-            +'<div style="flex:1;font-size:13px;font-weight:500;color:var(--text);padding-right:10px">'+esc(item.title||q)+'</div>'
+            +(item.image ? '<img src="'+esc(item.image)+'" style="width:100%;height:110px;object-fit:contain;border-radius:8px;margin-bottom:8px;background:var(--bg3)" loading="lazy" onerror="this.remove()">' : '')
+            +'<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:6px">'
+            +'<div style="flex:1;font-size:13px;font-weight:500;color:var(--text)">'+esc(item.title)+'</div>'
             +'<div class="err-pct">-'+diff+'%</div>'
             +'</div>'
             +'<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">'
             +'<span class="pmain">'+fmt(item.price)+'</span>'
-            +'<span style="font-size:11px;color:var(--t3)">mediana '+fmt(medianP)+'</span>'
+            +'<span style="font-size:11px;color:var(--t3)">vs mediana '+fmt(medianP)+'</span>'
             +'<span class="bdg br">⚡ Posible error</span>'
             +'</div>'
-            +'<div style="font-size:11px;color:var(--t3);margin-top:4px">📍 '+esc(item.store||'Tienda')+'</div>'
+            +'<div style="font-size:11px;color:var(--t3);margin-top:5px">📍 '+esc(item.store)+'</div>'
             +'</div>';
         });
       } else {
         h += '<div class="card" style="text-align:center;padding:20px">'
           +'<div style="font-size:28px;margin-bottom:8px">✅</div>'
-          +'<div style="font-weight:600;color:var(--text)">Sin errores detectados</div>'
+          +'<div style="font-weight:600;color:var(--text)">Sin errores de precio detectados</div>'
           +'<div style="font-size:12px;color:var(--t3);margin-top:4px">Los precios están dentro del rango normal</div>'
           +'</div>';
       }
 
-      h += '<div class="sec" style="margin-top:6px">Todos los resultados</div>';
+      h += '<div class="sec" style="margin-top:6px">Todos los precios encontrados</div>';
       items.slice(0,15).forEach(function(item,i){
         var isLow = item.price < medianP * 0.65;
         h += '<div class="card'+(isLow?' err-card':'')+'">'
           +'<div class="prod">'
-          +'<div class="pimg">'
-          +(item.image
-            ? '<img src="'+esc(item.image)+'" onerror="this.parentElement.innerHTML=\'📦\'" loading="lazy">'
-            : '📦')
-          +'</div>'
+          +'<div class="pimg">'+(item.image ? '<img src="'+esc(item.image)+'" onerror="this.parentElement.innerHTML=\'📦\'" loading="lazy">' : '📦')+'</div>'
           +'<div class="pinfo">'
-          +'<div class="ptitle">'+esc(item.title||q)+'</div>'
-          +'<div class="prow">'
-          +'<span class="pmain">'+fmt(item.price)+'</span>'
+          +'<div class="ptitle">'+esc(item.title)+'</div>'
+          +'<div class="prow"><span class="pmain">'+fmt(item.price)+'</span>'
           +(i===0?'<span class="bdg bv">🏆 Más barato</span>':'')
-          +(isLow?'<span class="bdg br">⚡ Posible error</span>':'')
+          +(isLow?'<span class="bdg br">⚡ Error</span>':'')
           +'</div>'
-          +'<div style="font-size:11px;color:var(--t3)">📍 '+esc(item.store||'Tienda')+'</div>'
+          +'<div style="font-size:11px;color:var(--t3)">📍 '+esc(item.store)+'</div>'
           +'</div></div></div>';
       });
 
-      h += '<button class="rel-btn" id="err-reload">🔄 Actualizar análisis</button>';
-      h += '<div class="cap">Fuente: Google Shopping · '+new Date().toLocaleTimeString('es-ES')+'</div>';
-      setHTML('erroresBody', h);
-
-      var rb = $('err-reload');
+      h += '<button class="rel-btn" id="errReload">🔄 Actualizar análisis</button>';
+      h += '<div class="cap">Datos de Idealo/Google Shopping · '+new Date().toLocaleTimeString('es-ES')+'</div>';
+      setHTML('errResults', h);
+      var rb = $('errReload');
       if (rb) rb.addEventListener('click', function(){ buscarErrores(q); });
     })
-    .catch(function(){ renderErroresFallback(q); });
+    .catch(function(){ showErrFallback(q); });
 }
 
-function renderErroresFallback(q){
-  setHTML('erroresBody',
-    '<div class="ibar">⚠️ No se pudo analizar precios para "'+esc(q)+'". Inténtalo de nuevo.</div>'
+function showErrFallback(q){
+  setHTML('errResults',
+    '<div class="ibar">⚠️ No se pudieron obtener precios para "'+esc(q)+'". Inténtalo de nuevo.</div>'
     +'<button class="rel-btn" id="errRetry" style="margin-top:8px">🔄 Reintentar</button>');
   var rb = $('errRetry');
   if (rb) rb.addEventListener('click', function(){ buscarErrores(q); });
 }
+
 
 // ─── CHOLLOS ─────────────────────────────────────────────────────────────────
 // Two completely independent data sources — switching tabs fetches different data
@@ -530,8 +539,8 @@ document.querySelectorAll('#ctabsWrap .ctab').forEach(function(btn){
 
 // Called when chollos panel becomes visible, and when tabs are clicked
 function loadChollos(){
-  ACTIVE_CTAB = 'chollometro'; // always start on first tab
-  loadOrShowTab('chollometro');
+  // Always show the active tab — loadOrShowTab handles caching
+  loadOrShowTab(ACTIVE_CTAB);
 }
 
 function loadOrShowTab(tab){
